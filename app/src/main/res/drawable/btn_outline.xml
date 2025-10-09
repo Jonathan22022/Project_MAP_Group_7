@@ -1,0 +1,7 @@
+<!--btn_outline.xml-->
+    <shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="rectangle">
+        <stroke android:color="#1E88E5" android:width="2dp"/>
+        <corners android:radius="12dp"/>
+        <solid android:color="@android:color/white"/>
+    </shape>
