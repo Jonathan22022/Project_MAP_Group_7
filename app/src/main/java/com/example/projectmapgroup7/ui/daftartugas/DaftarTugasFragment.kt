@@ -4,44 +4,46 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.example.projectmapgroup7.R
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
+import androidx.viewpager2.widget.ViewPager2
 
 class DaftarTugasFragment : Fragment() {
+
+    private lateinit var tabLayout: TabLayout
+    private lateinit var viewPager: ViewPager2
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val view = inflater.inflate(R.layout.fragment_daftar_tugas, container, false)
+        tabLayout = view.findViewById(R.id.tabLayout)
+        viewPager = view.findViewById(R.id.viewPager)
 
-        val tabSelesai: TextView = view.findViewById(R.id.tabSelesai)
-        val tabProgress: TextView = view.findViewById(R.id.tabProgress)
-        val fabDelete: FloatingActionButton = view.findViewById(R.id.fabDelete)
-
-        tabSelesai.setOnClickListener {
-            tabSelesai.setTextColor(resources.getColor(R.color.purple_500))
-            tabProgress.setTextColor(resources.getColor(R.color.gray))
-            tabSelesai.setBackgroundResource(R.drawable.tab_selected_bg)
-            tabProgress.background = null
-            Toast.makeText(requireContext(), "Menampilkan tugas selesai", Toast.LENGTH_SHORT).show()
-        }
-
-        tabProgress.setOnClickListener {
-            tabProgress.setTextColor(resources.getColor(R.color.purple_500))
-            tabSelesai.setTextColor(resources.getColor(R.color.gray))
-            tabProgress.setBackgroundResource(R.drawable.tab_selected_bg)
-            tabSelesai.background = null
-            Toast.makeText(requireContext(), "Menampilkan tugas in progress", Toast.LENGTH_SHORT).show()
-        }
-
-        fabDelete.setOnClickListener {
-            Toast.makeText(requireContext(), "Tugas dihapus", Toast.LENGTH_SHORT).show()
-        }
-
+        setupViewPager()
         return view
+    }
+
+    private fun setupViewPager() {
+        val adapter = object : FragmentStateAdapter(this) {
+            override fun getItemCount(): Int = 2
+            override fun createFragment(position: Int): Fragment {
+                return when (position) {
+                    0 -> TaskListFragment.newInstance("progress")
+                    else -> TaskListFragment.newInstance("selesai")
+                }
+            }
+        }
+
+        viewPager.adapter = adapter
+
+        val tabTitles = arrayOf("IN PROGRESS", "SELESAI")
+        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            tab.text = tabTitles[position]
+        }.attach()
     }
 }

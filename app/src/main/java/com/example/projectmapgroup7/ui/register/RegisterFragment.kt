@@ -3,6 +3,7 @@ package com.example.projectmapgroup7.ui.register
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import com.example.projectmapgroup7.util.HashUtils
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
@@ -90,16 +91,35 @@ class RegisterFragment : Fragment() {
                 }
 
                 // Buat objek user
+                val hashedPassword = HashUtils.sha256(password)
+
                 val newUser = User(
                     username = username,
                     email = email,
-                    password = password,
+                    password = hashedPassword,
                     phone = if (phone.isEmpty()) null else phone,
                     nim_nik = if (nimNik.isEmpty()) null else nimNik
                 )
 
                 // Insert user baru menggunakan data class
                 client.postgrest["users"].insert(newUser)
+                // Ambil user yang baru dibuat
+                val createdUser = client.postgrest["users"]
+                    .select {
+                        filter {
+                            eq("username", username)
+                        }
+                    }
+                    .decodeSingle<User>()
+
+                // Simpan ID User agar langsung login otomatis
+                val sharedPref = requireActivity().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE)
+                with(sharedPref.edit()) {
+                    putString("id_user", createdUser.id)
+                    putString("username", createdUser.username)
+                    putString("profile_picture", createdUser.profile_picture)
+                    apply()
+                }
 
                 Toast.makeText(requireContext(), "Registrasi berhasil!", Toast.LENGTH_SHORT).show()
 

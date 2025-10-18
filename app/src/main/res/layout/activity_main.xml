@@ -8,11 +8,13 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <!-- =================== MAIN AREA =================== -->
     <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinator_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- Toolbar -->
+        <!-- ===== App Bar (Toolbar) ===== -->
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -26,43 +28,44 @@
                 app:popupTheme="@style/Theme.ProjectMAPGroup7.PopupOverlay" />
         </com.google.android.material.appbar.AppBarLayout>
 
-        <!-- Konten utama dengan bottom padding untuk FAB -->
+        <!-- ===== Main Content ===== -->
         <include
             layout="@layout/content_main"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginBottom="80dp" />
 
-        <!-- Bottom App Bar -->
-        <com.google.android.material.bottomappbar.BottomAppBar
-            android:id="@+id/bottomAppBar"
+        <!-- ===== Bottom Navigation ===== -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_navigation"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="70dp"
             android:layout_gravity="bottom"
             android:background="@color/white"
-            app:fabAlignmentMode="center"
-            app:hideOnScroll="false"
-            app:fabCradleMargin="10dp"
-            app:fabCradleRoundedCornerRadius="35dp"
             app:menu="@menu/bottom_nav_menu"
-            app:navigationIcon="@null" />
+            app:itemIconTint="@color/nav_item_color"
+            app:itemTextColor="@color/nav_item_color"
+            android:elevation="8dp" />
 
-        <!-- Floating Action Button -->
+        <!-- ===== Floating Action Button (FAB) ===== -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
-            android:layout_marginBottom="32dp"
-            app:backgroundTint="@color/purple_500"
-            app:layout_anchor="@id/bottomAppBar"
-            app:layout_anchorGravity="center"
-            android:elevation="12dp"
-            app:maxImageSize="35dp"
-            android:src="@drawable/ic_add" />
-
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="35dp"
+            android:src="@drawable/ic_add"
+            android:scaleType="center"
+            app:tint="@android:color/white"
+            app:backgroundTint="@color/blue"
+            app:useCompatPadding="true"
+            app:elevation="12dp"
+            app:borderWidth="0dp"
+            app:maxImageSize="32dp"
+            app:fabSize="normal" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <!-- Drawer -->
+    <!-- =================== DRAWER NAVIGATION =================== -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
         android:layout_width="wrap_content"
@@ -70,6 +73,9 @@
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
         app:headerLayout="@layout/nav_header_main"
-        app:menu="@menu/activity_main_drawer" />
+        app:menu="@menu/activity_main_drawer"
+        android:background="@color/white"
+        android:elevation="16dp" />
 
 </androidx.drawerlayout.widget.DrawerLayout>
+

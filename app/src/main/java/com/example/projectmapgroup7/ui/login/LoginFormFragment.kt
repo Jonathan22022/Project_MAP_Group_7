@@ -15,6 +15,7 @@ import com.example.projectmapgroup7.data.model.User
 import com.example.projectmapgroup7.data.remote.SupabaseClientInstance
 import kotlinx.coroutines.launch
 import io.github.jan.supabase.postgrest.postgrest
+import com.example.projectmapgroup7.util.HashUtils
 import com.example.projectmapgroup7.databinding.FragmentLoginFormBinding
 
 class LoginFormFragment : Fragment() {
@@ -36,6 +37,7 @@ class LoginFormFragment : Fragment() {
         binding.btnLogin.setOnClickListener {
             val username = binding.etUsername.text.toString().trim()
             val password = binding.etPassword.text.toString().trim()
+            val hashedPassword = HashUtils.sha256(password)
 
             if (username.isEmpty() || password.isEmpty()) {
                 Toast.makeText(requireContext(), "Isi username dan password!", Toast.LENGTH_SHORT).show()
@@ -50,7 +52,7 @@ class LoginFormFragment : Fragment() {
                         .select {
                             filter {
                                 eq("username", username)
-                                eq("password", password)
+                                eq("password", hashedPassword)
                             }
                         }
                         .decodeList<User>()
@@ -63,6 +65,7 @@ class LoginFormFragment : Fragment() {
                         // Simpan sesi user
                         val sharedPref = requireActivity().getSharedPreferences("user_session", AppCompatActivity.MODE_PRIVATE)
                         with(sharedPref.edit()) {
+                            putString("id_user", user.id)
                             putString("username", usernameFromSupabase)
                             putString("profile_picture", profilePictureUrlFromSupabase)
                             apply()

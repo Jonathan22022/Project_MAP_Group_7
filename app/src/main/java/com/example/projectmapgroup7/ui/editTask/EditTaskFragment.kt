@@ -1,8 +1,9 @@
-package com.example.projectmapgroup7.ui.addtask
+package com.example.projectmapgroup7.ui.editTask
 
 import android.Manifest
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.content.ContentValues
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -14,41 +15,37 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.example.projectmapgroup7.data.remote.SupabaseClientInstance
-import com.example.projectmapgroup7.databinding.FragmentAddTaskBinding
-import com.example.projectmapgroup7.model.Task
+import com.example.projectmapgroup7.databinding.FragmentEditTaskBinding
 import com.example.projectmapgroup7.ml.PriorityPredictor
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-class AddTaskFragment : Fragment() {
+class EditTaskFragment : Fragment() {
 
-    private var _binding: FragmentAddTaskBinding? = null
+    private var _binding: FragmentEditTaskBinding? = null
     private val binding get() = _binding!!
     private val client = SupabaseClientInstance.client
     private val calendar = Calendar.getInstance()
     private var imageUri: Uri? = null
     private lateinit var priorityPredictor: PriorityPredictor
 
-    // === Launchers untuk ambil gambar ===
+    private var originalImageUrl: String? = null
+
+    // Launchers untuk ambil gambar - FIXED VERSION
     private val cameraLauncher =
-        registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-            bitmap?.let {
-                val uri = MediaStore.Images.Media.insertImage(
-                    requireContext().contentResolver,
-                    it,
-                    "task_${System.currentTimeMillis()}",
-                    null
-                )
-                imageUri = Uri.parse(uri)
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success) {
+                // Gambar sudah disimpan di imageUri yang kita tentukan sebelumnya
                 binding.previewGambar.setImageURI(imageUri)
+            } else {
+                Toast.makeText(requireContext(), "Gagal mengambil foto", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -74,15 +71,49 @@ class AddTaskFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentAddTaskBinding.inflate(inflater, container, false)
-        priorityPredictor = PriorityPredictor(requireContext()) // 🔮 inisialisasi model
+        _binding = FragmentEditTaskBinding.inflate(inflater, container, false)
+        priorityPredictor = PriorityPredictor(requireContext())
 
-        // Tombol pilih tanggal
+        // Ambil data dari arguments
+        val title = arguments?.getString("title") ?: ""
+        val description = arguments?.getString("description") ?: ""
+        val deadline = arguments?.getString("deadline") ?: ""
+        val priority = arguments?.getString("priority") ?: ""
+        originalImageUrl = arguments?.getString("image_url")
+
+        // Set data ke form
+        binding.inputJudul.setText(title)
+        binding.inputDeskripsi.setText(description)
+        binding.tvTanggal.text = deadline
+
+        // Load gambar jika ada
+        if (!originalImageUrl.isNullOrEmpty()) {
+            com.bumptech.glide.Glide.with(requireContext())
+                .load(originalImageUrl)
+                .into(binding.previewGambar)
+        }
+
+        // Setup tanggal picker
         binding.btnPilihTanggal.setOnClickListener {
             val dateSetListener = DatePickerDialog.OnDateSetListener { _, year, month, day ->
                 calendar.set(year, month, day)
                 updateDateText()
             }
+
+            // Parse tanggal yang ada jika tersedia
+            if (deadline.isNotEmpty()) {
+                try {
+                    val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val date = format.parse(deadline)
+                    date?.let {
+                        calendar.time = it
+                    }
+                } catch (e: Exception) {
+                    // Jika parsing gagal, gunakan tanggal sekarang
+                    calendar.time = Date()
+                }
+            }
+
             DatePickerDialog(
                 requireContext(),
                 dateSetListener,
@@ -97,15 +128,19 @@ class AddTaskFragment : Fragment() {
             checkPermissionsAndShowDialog()
         }
 
-        // Tombol tambah tugas
-        binding.btnTambahTugas.setOnClickListener {
-            tambahTugas()
+        // Tombol update tugas
+        binding.btnUpdateTugas.setOnClickListener {
+            updateTugas()
+        }
+
+        // Tombol batal
+        binding.btnBatal.setOnClickListener {
+            findNavController().navigateUp()
         }
 
         return binding.root
     }
 
-    // === Cek izin kamera & galeri ===
     private fun checkPermissionsAndShowDialog() {
         val permissionsNeeded = mutableListOf<String>()
 
@@ -136,7 +171,6 @@ class AddTaskFragment : Fragment() {
         }
     }
 
-    // === Dialog sumber gambar ===
     private fun showImageSourceDialog() {
         val options = arrayOf("Ambil Foto", "Pilih dari Galeri")
 
@@ -144,15 +178,33 @@ class AddTaskFragment : Fragment() {
             .setTitle("Pilih Sumber Gambar")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> cameraLauncher.launch(null)
+                    0 -> takePhoto()
                     1 -> galleryLauncher.launch("image/*")
                 }
             }
             .show()
     }
 
-    // === Tambah tugas ke Supabase ===
-    private fun tambahTugas() {
+    private fun takePhoto() {
+        // Buat URI untuk menyimpan foto
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.TITLE, "Task_${System.currentTimeMillis()}")
+            put(MediaStore.Images.Media.DESCRIPTION, "Foto tugas")
+        }
+
+        imageUri = requireContext().contentResolver.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            values
+        )
+
+        imageUri?.let {
+            cameraLauncher.launch(it)
+        } ?: run {
+            Toast.makeText(requireContext(), "Gagal membuat file untuk foto", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateTugas() {
         val judul = binding.inputJudul.text.toString().trim()
         val deskripsi = binding.inputDeskripsi.text.toString().trim()
         val tanggal = binding.tvTanggal.text.toString().trim()
@@ -162,12 +214,17 @@ class AddTaskFragment : Fragment() {
             return
         }
 
-        // 🔮 Prediksi prioritas menggunakan model
+        // Prediksi prioritas menggunakan model
         val prioritas = prediksiPrioritas(deskripsi)
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val imageUrl = imageUri?.let { uploadImageToSupabase(it, judul) }
+                var imageUrl = originalImageUrl
+
+                // Upload gambar baru jika ada
+                if (imageUri != null) {
+                    imageUrl = uploadImageToSupabase(imageUri!!, judul)
+                }
 
                 val sharedPref = requireActivity().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE)
                 val idUser = sharedPref.getString("id_user", null)
@@ -178,49 +235,58 @@ class AddTaskFragment : Fragment() {
                     return@launch
                 }
 
-                client.postgrest["tasks"].insert(
-                    Task(
-                        title = judul,
-                        description = deskripsi,
-                        image_url = imageUrl ?: "",
-                        prioritization = prioritas,
-                        deadline = tanggal,
-                        is_complete = false,
-                        id_user = idUser
-                    )
-                )
+                // Update data di Supabase berdasarkan judul asli dan user
+                // Note: Dalam implementasi real, sebaiknya gunakan task ID
+                val originalTitle = arguments?.getString("title") ?: ""
+
+                client.postgrest["tasks"].update(
+                    {
+                        set("title", judul)
+                        set("description", deskripsi)
+                        set("image_url", imageUrl ?: "")
+                        set("prioritization", prioritas)
+                        set("deadline", tanggal)
+                    }
+                ) {
+                    filter {
+                        eq("title", originalTitle)
+                        eq("id_user", idUser)
+                    }
+                }
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Tugas berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
-                    clearInput()
+                    Toast.makeText(requireContext(), "Tugas berhasil diupdate!", Toast.LENGTH_SHORT).show()
+                    // Kembali ke halaman sebelumnya
+                    findNavController().navigateUp()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Gagal: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), "Gagal update: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
     }
 
-    // === Upload gambar ke Supabase Storage ===
     private suspend fun uploadImageToSupabase(uri: Uri, title: String): String? {
-        val storage = client.storage.from("task_images")
-        val fileName = "task_${title}_${System.currentTimeMillis()}.jpg"
+        return try {
+            val storage = client.storage.from("task_images")
+            val fileName = "task_${title}_${System.currentTimeMillis()}.jpg"
 
-        val inputStream = requireContext().contentResolver.openInputStream(uri)
-        val bytes = inputStream?.readBytes() ?: return null
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val bytes = inputStream?.readBytes() ?: return null
 
-        storage.upload(fileName, bytes, upsert = true)
-        return storage.publicUrl(fileName)
+            storage.upload(fileName, bytes, upsert = true)
+            storage.publicUrl(fileName)
+        } catch (e: Exception) {
+            null
+        }
     }
 
-    // === Prediksi prioritas menggunakan model TensorFlow Lite ===
     private fun prediksiPrioritas(text: String): String {
-        // Langkah 1: buat vektor dummy (sementara)
+        // Implementasi prediksi prioritas (sama seperti di AddTaskFragment)
         val dummyVector = FloatArray(5000) { 0f }
         val resultIndex = priorityPredictor.predictPriority(dummyVector)
 
-        // Langkah 2: perbaiki hasil model dengan keyword score
         val lowerText = text.lowercase()
         var score = 0
         if ("penting" in lowerText || "urgent" in lowerText || "segera" in lowerText) score += 2
@@ -241,18 +307,9 @@ class AddTaskFragment : Fragment() {
         }
     }
 
-
     private fun updateDateText() {
         val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         binding.tvTanggal.text = format.format(calendar.time)
-    }
-
-    private fun clearInput() {
-        binding.inputJudul.text.clear()
-        binding.inputDeskripsi.text.clear()
-        binding.previewGambar.setImageResource(0)
-        binding.tvTanggal.text = ""
-        imageUri = null
     }
 
     override fun onDestroyView() {

@@ -13,7 +13,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Progress Minggu ini -->
         <TextView
             android:id="@+id/tv_progress_label"
             android:layout_width="wrap_content"
@@ -35,191 +34,32 @@
             android:backgroundTint="#DDDDDD"
             android:layout_marginBottom="12dp" />
 
-        <!-- Bagian Tugas Prioritas -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tugas Prioritas"
-            android:textStyle="bold"
-            android:textSize="15sp"
-            android:layout_marginBottom="4dp"
-            android:textColor="@android:color/black" />
-
-        <!-- Card Tugas Prioritas -->
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp">
-
-            <!-- Item Tugas -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:orientation="horizontal"
-                android:layout_marginVertical="4dp"
-                android:layout_marginHorizontal="4dp"
-                android:gravity="center_vertical"
-                android:layout_marginTop="4dp"
-                android:backgroundTint="#E0E0E0"
-                android:background="@drawable/rounded_card">
-
-                <View
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:backgroundTint="#FF0000"
-                    android:background="@drawable/circle_red" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Olahraga 30 menit"
-                        android:textStyle="bold"
-                        android:textSize="14sp"
-                        android:textColor="@android:color/black" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Hari ini, 14:00 • Pribadi"
-                        android:textSize="12sp"
-                        android:textColor="#7E9CFF" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/rounded_card"
-                android:padding="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <View
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:background="@drawable/circle_red" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tugas UAS"
-                        android:textStyle="bold"
-                        android:textSize="14sp"
-                        android:textColor="@android:color/black" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Hari ini, 23:00 • Pekerjaan"
-                        android:textSize="12sp"
-                        android:textColor="#7E9CFF" />
-                </LinearLayout>
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Bagian Tugas Lainnya -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Tugas Lainnya"
+            android:text="Daftar Tugas"
             android:textStyle="bold"
             android:textSize="15sp"
             android:layout_marginTop="8dp"
             android:textColor="@android:color/black" />
 
-        <!-- Daftar Tugas Lainnya -->
-        <LinearLayout
-            android:orientation="vertical"
+        <TextView
+            android:id="@+id/tvNoTask"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp">
+            android:text="Memuat task..."
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_marginTop="8dp"
+            android:textColor="#888888" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/rounded_card"
-                android:padding="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginVertical="4dp">
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewTasks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"/>
 
-                <View
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:background="@drawable/circle_blue" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Bersihkan Kamar"
-                        android:textStyle="bold"
-                        android:textSize="14sp"
-                        android:textColor="@android:color/black" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Hari ini, 23:30 • Pribadi"
-                        android:textSize="12sp"
-                        android:textColor="#7E9CFF" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/rounded_card"
-                android:padding="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <View
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:background="@drawable/circle_blue" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Bersihkan Kamar"
-                        android:textStyle="bold"
-                        android:textSize="14sp"
-                        android:textColor="@android:color/black" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Hari ini, 23:30 • Pribadi"
-                        android:textSize="12sp"
-                        android:textColor="#7E9CFF" />
-                </LinearLayout>
-            </LinearLayout>
-        </LinearLayout>
     </LinearLayout>
 </ScrollView>
