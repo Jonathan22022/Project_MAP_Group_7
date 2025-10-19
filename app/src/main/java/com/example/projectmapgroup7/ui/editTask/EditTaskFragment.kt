@@ -31,24 +31,39 @@ class EditTaskFragment : Fragment() {
 
     private var _binding: FragmentEditTaskBinding? = null
     private val binding get() = _binding!!
+
+    // Instance Supabase untuk koneksi database dan storage
     private val client = SupabaseClientInstance.client
+
+    // Calendar digunakan untuk menyimpan tanggal deadline
     private val calendar = Calendar.getInstance()
+
+    // URI untuk gambar (foto tugas)
     private var imageUri: Uri? = null
+
+    // Model machine learning untuk memprediksi prioritas tugas
     private lateinit var priorityPredictor: PriorityPredictor
 
+    // URL gambar lama (sebelum diedit)
     private var originalImageUrl: String? = null
 
-    // Launchers untuk ambil gambar - FIXED VERSION
+    /**
+     * Launcher untuk mengambil foto dari kamera.
+     * Jika berhasil, hasil foto disimpan di imageUri.
+     */
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
             if (success) {
-                // Gambar sudah disimpan di imageUri yang kita tentukan sebelumnya
                 binding.previewGambar.setImageURI(imageUri)
             } else {
                 Toast.makeText(requireContext(), "Gagal mengambil foto", Toast.LENGTH_SHORT).show()
             }
         }
 
+    /**
+     * Launcher untuk memilih gambar dari galeri.
+     * Menyimpan URI gambar yang dipilih.
+     */
     private val galleryLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             uri?.let {
@@ -57,6 +72,10 @@ class EditTaskFragment : Fragment() {
             }
         }
 
+    /**
+     * Launcher untuk meminta izin kamera & galeri.
+     * Jika ditolak, menampilkan peringatan.
+     */
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val denied = permissions.filterValues { !it }.keys
@@ -74,33 +93,33 @@ class EditTaskFragment : Fragment() {
         _binding = FragmentEditTaskBinding.inflate(inflater, container, false)
         priorityPredictor = PriorityPredictor(requireContext())
 
-        // Ambil data dari arguments
+        // Mengambil data tugas dari arguments (data dikirim dari fragment sebelumnya)
         val title = arguments?.getString("title") ?: ""
         val description = arguments?.getString("description") ?: ""
         val deadline = arguments?.getString("deadline") ?: ""
         val priority = arguments?.getString("priority") ?: ""
         originalImageUrl = arguments?.getString("image_url")
 
-        // Set data ke form
+        // Menampilkan data lama ke input form
         binding.inputJudul.setText(title)
         binding.inputDeskripsi.setText(description)
         binding.tvTanggal.text = deadline
 
-        // Load gambar jika ada
+        // Menampilkan gambar lama (jika ada)
         if (!originalImageUrl.isNullOrEmpty()) {
             com.bumptech.glide.Glide.with(requireContext())
                 .load(originalImageUrl)
                 .into(binding.previewGambar)
         }
 
-        // Setup tanggal picker
+        // Tombol untuk memilih tanggal deadline
         binding.btnPilihTanggal.setOnClickListener {
             val dateSetListener = DatePickerDialog.OnDateSetListener { _, year, month, day ->
                 calendar.set(year, month, day)
                 updateDateText()
             }
 
-            // Parse tanggal yang ada jika tersedia
+            // Jika ada tanggal lama, set tanggal tersebut di date picker
             if (deadline.isNotEmpty()) {
                 try {
                     val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -109,11 +128,11 @@ class EditTaskFragment : Fragment() {
                         calendar.time = it
                     }
                 } catch (e: Exception) {
-                    // Jika parsing gagal, gunakan tanggal sekarang
                     calendar.time = Date()
                 }
             }
 
+            // Menampilkan DatePicker dialog
             DatePickerDialog(
                 requireContext(),
                 dateSetListener,
@@ -123,7 +142,7 @@ class EditTaskFragment : Fragment() {
             ).show()
         }
 
-        // Tombol pilih gambar
+        // Tombol upload gambar (kamera/galeri)
         binding.btnUploadGambar.setOnClickListener {
             checkPermissionsAndShowDialog()
         }
@@ -133,7 +152,7 @@ class EditTaskFragment : Fragment() {
             updateTugas()
         }
 
-        // Tombol batal
+        // Tombol batal kembali ke halaman sebelumnya
         binding.btnBatal.setOnClickListener {
             findNavController().navigateUp()
         }
@@ -141,6 +160,10 @@ class EditTaskFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Mengecek apakah izin kamera & penyimpanan sudah diberikan.
+     * Jika belum, meminta izin. Jika sudah, tampilkan dialog pemilihan sumber gambar.
+     */
     private fun checkPermissionsAndShowDialog() {
         val permissionsNeeded = mutableListOf<String>()
 
@@ -150,6 +173,7 @@ class EditTaskFragment : Fragment() {
             permissionsNeeded.add(Manifest.permission.CAMERA)
         }
 
+        // Untuk Android 13 ke atas, gunakan READ_MEDIA_IMAGES
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_IMAGES)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -157,6 +181,7 @@ class EditTaskFragment : Fragment() {
                 permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES)
             }
         } else {
+            // Untuk Android versi lama, gunakan READ_EXTERNAL_STORAGE
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED
             ) {
@@ -171,6 +196,10 @@ class EditTaskFragment : Fragment() {
         }
     }
 
+    /**
+     * Menampilkan dialog untuk memilih sumber gambar:
+     * Kamera atau Galeri.
+     */
     private fun showImageSourceDialog() {
         val options = arrayOf("Ambil Foto", "Pilih dari Galeri")
 
@@ -178,15 +207,17 @@ class EditTaskFragment : Fragment() {
             .setTitle("Pilih Sumber Gambar")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> takePhoto()
-                    1 -> galleryLauncher.launch("image/*")
+                    0 -> takePhoto()             // Kamera
+                    1 -> galleryLauncher.launch("image/*")  // Galeri
                 }
             }
             .show()
     }
 
+    /**
+     * Membuka kamera dan menyimpan hasilnya ke MediaStore.
+     */
     private fun takePhoto() {
-        // Buat URI untuk menyimpan foto
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.TITLE, "Task_${System.currentTimeMillis()}")
             put(MediaStore.Images.Media.DESCRIPTION, "Foto tugas")
@@ -204,28 +235,33 @@ class EditTaskFragment : Fragment() {
         }
     }
 
+    /**
+     * Fungsi utama untuk mengupdate data tugas ke Supabase.
+     */
     private fun updateTugas() {
         val judul = binding.inputJudul.text.toString().trim()
         val deskripsi = binding.inputDeskripsi.text.toString().trim()
         val tanggal = binding.tvTanggal.text.toString().trim()
 
+        // Validasi input form
         if (judul.isEmpty() || deskripsi.isEmpty() || tanggal.isEmpty()) {
             Toast.makeText(requireContext(), "Lengkapi semua kolom!", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Prediksi prioritas menggunakan model
+        // Prediksi prioritas berdasarkan deskripsi
         val prioritas = prediksiPrioritas(deskripsi)
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 var imageUrl = originalImageUrl
 
-                // Upload gambar baru jika ada
+                // Jika user memilih gambar baru → upload ke Supabase Storage
                 if (imageUri != null) {
                     imageUrl = uploadImageToSupabase(imageUri!!, judul)
                 }
 
+                // Ambil ID user dari SharedPreferences
                 val sharedPref = requireActivity().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE)
                 val idUser = sharedPref.getString("id_user", null)
                 if (idUser.isNullOrEmpty()) {
@@ -235,8 +271,7 @@ class EditTaskFragment : Fragment() {
                     return@launch
                 }
 
-                // Update data di Supabase berdasarkan judul asli dan user
-                // Note: Dalam implementasi real, sebaiknya gunakan task ID
+                // Update data tugas di tabel Supabase
                 val originalTitle = arguments?.getString("title") ?: ""
 
                 client.postgrest["tasks"].update(
@@ -254,9 +289,9 @@ class EditTaskFragment : Fragment() {
                     }
                 }
 
+                // Setelah berhasil, tampilkan notifikasi dan kembali ke halaman sebelumnya
                 withContext(Dispatchers.Main) {
                     Toast.makeText(requireContext(), "Tugas berhasil diupdate!", Toast.LENGTH_SHORT).show()
-                    // Kembali ke halaman sebelumnya
                     findNavController().navigateUp()
                 }
             } catch (e: Exception) {
@@ -267,6 +302,10 @@ class EditTaskFragment : Fragment() {
         }
     }
 
+    /**
+     * Mengupload gambar ke Supabase Storage.
+     * Mengembalikan URL publik dari gambar yang diunggah.
+     */
     private suspend fun uploadImageToSupabase(uri: Uri, title: String): String? {
         return try {
             val storage = client.storage.from("task_images")
@@ -282,8 +321,11 @@ class EditTaskFragment : Fragment() {
         }
     }
 
+    /**
+     * Fungsi prediksi prioritas tugas berdasarkan teks deskripsi.
+     * Menggunakan kombinasi hasil model ML dan rule sederhana berbasis kata kunci.
+     */
     private fun prediksiPrioritas(text: String): String {
-        // Implementasi prediksi prioritas (sama seperti di AddTaskFragment)
         val dummyVector = FloatArray(5000) { 0f }
         val resultIndex = priorityPredictor.predictPriority(dummyVector)
 
@@ -307,6 +349,9 @@ class EditTaskFragment : Fragment() {
         }
     }
 
+    /**
+     * Mengupdate tampilan tanggal di TextView sesuai pilihan pengguna.
+     */
     private fun updateDateText() {
         val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         binding.tvTanggal.text = format.format(calendar.time)
