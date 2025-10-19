@@ -94,8 +94,16 @@ class DetailTugasFragment : Fragment() {
                 }
 
                 val client = SupabaseClientInstance.client
+
+                // 🔹 Ambil waktu sekarang (dalam format ISO 8601)
+                val currentTime = java.time.LocalDateTime.now()
+                val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                val formattedTime = currentTime.format(formatter)
+
+                // 🔹 Update kolom is_complete dan completed_at
                 client.postgrest["tasks"].update({
                     set("is_complete", true)
+                    set("completed_at", formattedTime)
                 }) {
                     filter {
                         eq("title", title)

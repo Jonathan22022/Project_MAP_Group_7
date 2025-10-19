@@ -17,7 +17,7 @@
 
     <fragment
         android:id="@+id/nav_insight"
-        android:name="com.example.projectmapgroup7.ui.insight.InsightFragment"
+        android:name="com.example.projectmapgroup7.ui.insight.WeeklyInsightFragment"
         android:label="@string/menu_insight"
         tools:layout="@layout/fragment_insight" />
 
@@ -26,12 +26,6 @@
         android:name="com.example.projectmapgroup7.ui.addtask.AddTaskFragment"
         android:label="@string/menu_addtask"
         tools:layout="@layout/fragment_add_task" />
-
-    <fragment
-        android:id="@+id/nav_notification"
-        android:name="com.example.projectmapgroup7.ui.notification.NotificationFragment"
-        android:label="@string/menu_notification"
-        tools:layout="@layout/fragment_notification" />
 
     <fragment
         android:id="@+id/nav_account"
@@ -49,7 +43,11 @@
         android:id="@+id/nav_search"
         android:name="com.example.projectmapgroup7.ui.search.SearchFragment"
         android:label="@string/menu_search"
-        tools:layout="@layout/fragment_search" />
+        tools:layout="@layout/fragment_search">
+        <action
+            android:id="@+id/action_nav_search_to_detailTugasFragment"
+            app:destination="@id/detailTugasFragment" />
+    </fragment>
     <fragment
         android:id="@+id/nav_setting"
         android:name="com.example.projectmapgroup7.ui.setting.SettingFragment"
@@ -93,9 +91,9 @@
         android:name="com.example.projectmapgroup7.DetailTugas.DetailTugasFragment"
         android:label="Detail Tugas"
         tools:layout="@layout/fragment_detail_tugas">
-            <action
-                android:id="@+id/action_detailTugasFragment_to_editTaskFragment"
-                app:destination="@id/editTaskFragment" />
+        <action
+            android:id="@+id/action_detailTugasFragment_to_editTaskFragment"
+            app:destination="@id/editTaskFragment" />
     </fragment>
 
     <fragment

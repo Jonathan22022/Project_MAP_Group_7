@@ -1,82 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/swipeRefresh"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
-    android:padding="16dp"
-    tools:context=".ui.insight.InsightFragment">
+    tools:context=".ui.insight.WeeklyInsightFragment">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        android:fillViewport="true">
 
-        <!-- Judul -->
-        <TextView
-            android:id="@+id/tvJudul"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Insight Mingguan"
-            android:textStyle="bold"
-            android:textSize="20sp"
-            android:textColor="@android:color/black"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Bar Chart -->
-        <com.github.mikephil.charting.charts.BarChart
-            android:id="@+id/barChart"
-            android:layout_width="match_parent"
-            android:layout_height="220dp"
-            android:background="@android:color/white"
-            android:elevation="2dp"
-            android:layout_marginBottom="16dp"
-            android:padding="8dp" />
-
-        <!-- Card Insight -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="20dp"
-            android:layout_gravity="center"
-            android:backgroundTint="@null"
-            android:elevation="3dp"
-            android:clipToOutline="true"
-            android:background="@drawable/rounded_bg">
+            android:orientation="vertical">
 
+            <!-- Judul -->
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvJudul"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="🗓️ Tugas selesai minggu ini: 17"
-                android:textColor="@android:color/black"
+                android:text="Insight Produktivitas Mingguan"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Chart: Tugas Selesai vs Tertunda -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Distribusi Tugas per Hari"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <com.github.mikephil.charting.charts.BarChart
+                android:id="@+id/barChart"
+                android:layout_width="match_parent"
+                android:layout_height="220dp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Ringkasan -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ringkasan"
+                android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvSummaryCompleted"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="❌ Tugas tertunda: 13"
-                android:textColor="@android:color/black"
+                android:text="Tugas Selesai: 0"
+                android:textSize="14sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvSummaryPending"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tugas Tertunda: 0"
+                android:textSize="14sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvMostProductive"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Waktu Paling Produktif: -"
+                android:textSize="14sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvPostponedType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tipe Tugas Paling Sering Ditunda: -"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Saran -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Saran Data Mining"
+                android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvSuggestion"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="⏰ Waktu paling produktif: Kamis"
-                android:textColor="@android:color/black"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:text="Saran akan muncul di sini..."
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="16dp" />
 
+            <!-- Ringkasan Cluster -->
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvClusterSummary"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="💡 Saran: Fokus menyelesaikan tugas lebih awal di awal minggu."
-                android:textColor="@android:color/black"
-                android:textStyle="bold" />
+                android:text="Ringkasan Cluster akan muncul di sini..."
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp"
+                android:lineSpacingExtra="4dp" />
+
         </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
