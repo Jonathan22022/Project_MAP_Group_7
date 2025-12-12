@@ -72,6 +72,22 @@ class EditTaskFragment : Fragment() {
             }
         }
 
+    private fun showTimePicker() {
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        val timePicker = android.app.TimePickerDialog(
+            requireContext(),
+            { _, selectedHour, selectedMinute ->
+                calendar.set(Calendar.HOUR_OF_DAY, selectedHour)
+                calendar.set(Calendar.MINUTE, selectedMinute)
+                updateDateTimeText()
+            },
+            hour, minute, true
+        )
+        timePicker.show()
+    }
+
     /**
      * Launcher untuk meminta izin kamera & galeri.
      * Jika ditolak, menampilkan peringatan.
@@ -116,17 +132,14 @@ class EditTaskFragment : Fragment() {
         binding.btnPilihTanggal.setOnClickListener {
             val dateSetListener = DatePickerDialog.OnDateSetListener { _, year, month, day ->
                 calendar.set(year, month, day)
-                updateDateText()
+                showTimePicker()
             }
 
             // Jika ada tanggal lama, set tanggal tersebut di date picker
             if (deadline.isNotEmpty()) {
                 try {
-                    val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    val date = format.parse(deadline)
-                    date?.let {
-                        calendar.time = it
-                    }
+                    val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    calendar.time = format.parse(deadline)!!
                 } catch (e: Exception) {
                     calendar.time = Date()
                 }
@@ -352,8 +365,8 @@ class EditTaskFragment : Fragment() {
     /**
      * Mengupdate tampilan tanggal di TextView sesuai pilihan pengguna.
      */
-    private fun updateDateText() {
-        val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private fun updateDateTimeText() {
+        val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         binding.tvTanggal.text = format.format(calendar.time)
     }
 

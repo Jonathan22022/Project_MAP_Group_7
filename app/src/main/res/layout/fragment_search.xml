@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:hint="Cari tugas berdasarkan judul..."
             android:drawableStart="@android:drawable/ic_menu_search"
-            android:padding="12dp"
+            android:layout_marginTop="70dp"
             android:background="@drawable/search_edittext_bg"
             android:layout_marginBottom="12dp"/>
 

@@ -1,10 +1,17 @@
 package com.example.projectmapgroup7.ui.addtask
 
-// Import berbagai library yang digunakan
 import android.Manifest
+import android.os.Build
+import android.app.AlarmManager
+import android.util.Log
+import android.app.TimePickerDialog
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.LayoutInflater
@@ -19,6 +26,7 @@ import com.example.projectmapgroup7.data.remote.SupabaseClientInstance
 import com.example.projectmapgroup7.databinding.FragmentAddTaskBinding
 import com.example.projectmapgroup7.model.Task
 import com.example.projectmapgroup7.ml.PriorityPredictor
+import com.example.projectmapgroup7.util.DeadlineReceiver
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +83,23 @@ class AddTaskFragment : Fragment() {
             }
         }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == 2001) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("AddTask", "Izin notifikasi DISETUJUI")
+            } else {
+                Log.w("AddTask", "Izin notifikasi DITOLAK")
+            }
+        }
+    }
+
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -86,7 +111,23 @@ class AddTaskFragment : Fragment() {
         binding.btnPilihTanggal.setOnClickListener {
             val dateSetListener = DatePickerDialog.OnDateSetListener { _, year, month, day ->
                 calendar.set(year, month, day)
-                updateDateText()
+
+                // Setelah tanggal dipilih, tampilkan TimePicker
+                val timeSetListener = TimePickerDialog.OnTimeSetListener { _, hour, minute ->
+                    calendar.set(Calendar.HOUR_OF_DAY, hour)
+                    calendar.set(Calendar.MINUTE, minute)
+                    calendar.set(Calendar.SECOND, 0)
+
+                    updateDateTimeText() // tampilkan format yyyy-MM-dd HH:mm:ss
+                }
+
+                TimePickerDialog(
+                    requireContext(),
+                    timeSetListener,
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    true
+                ).show()
             }
 
             // Tampilkan date picker
@@ -107,6 +148,7 @@ class AddTaskFragment : Fragment() {
         // Tombol untuk menambahkan tugas
         binding.btnTambahTugas.setOnClickListener {
             tambahTugas()
+            checkNotificationPermission()
         }
 
         return binding.root
@@ -203,6 +245,8 @@ class AddTaskFragment : Fragment() {
                         id_user = idUser
                     )
                 )
+                // Mengaktifkan notifikasi reminder deadline
+                scheduleDeadlineNotification(judul, tanggal)
 
                 // Notifikasi sukses di UI thread
                 withContext(Dispatchers.Main) {
@@ -261,8 +305,8 @@ class AddTaskFragment : Fragment() {
     }
 
     // === Update teks tanggal di tampilan ===
-    private fun updateDateText() {
-        val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private fun updateDateTimeText() {
+        val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         binding.tvTanggal.text = format.format(calendar.time)
     }
 
@@ -273,6 +317,93 @@ class AddTaskFragment : Fragment() {
         binding.previewGambar.setImageResource(0)
         binding.tvTanggal.text = ""
         imageUri = null
+    }
+
+    // Membuat notifikasi satu jam sebelum deadline
+    private fun scheduleDeadlineNotification(title: String, deadline: String) {
+        try {
+            Log.d("ScheduleNotif", "===== MULAI SCHEDULE NOTIF =====")
+            Log.d("ScheduleNotif", "Input title='$title', deadline='$deadline'")
+
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            val date = sdf.parse(deadline)
+
+            if (date == null) {
+                Log.e("ScheduleNotif", "ERROR: Gagal parse deadline string")
+                return
+            }
+
+            val deadlineMillis = date.time
+            val oneHourBefore = deadlineMillis - (60 * 60 * 1000)
+            val now = System.currentTimeMillis()
+
+            Log.d("ScheduleNotif", "deadlineMillis = $deadlineMillis")
+            Log.d("ScheduleNotif", "oneHourBefore = $oneHourBefore")
+            Log.d("ScheduleNotif", "Current time = $now")
+
+            if (oneHourBefore <= now) {
+                Log.w("ScheduleNotif", "WARNING: Jadwal notifikasi sudah lewat! Tidak dijalankan.")
+            }
+
+            val intent = Intent(requireContext(), DeadlineReceiver::class.java).apply {
+                putExtra("title", title)
+            }
+
+            val requestCode = title.hashCode()
+            Log.d("ScheduleNotif", "PendingIntent requestCode = $requestCode")
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                requireContext(),
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            if (pendingIntent == null) {
+                Log.e("ScheduleNotif", "PendingIntent == NULL, gagal membuat alarm!")
+            }
+
+            val alarmManager = requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            Log.d("ScheduleNotif", "setExactAndAllowWhileIdle() dipanggil...")
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                oneHourBefore,
+                pendingIntent
+            )
+
+            Log.d("ScheduleNotif", "===== NOTIFIKASI BERHASIL DIJADWALKAN =====")
+
+        } catch (e: Exception) {
+            Log.e("ScheduleNotif", "ERROR saat menjadwalkan notifikasi: ${e.message}", e)
+        }
+    }
+
+    private fun checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                showNotificationPermissionDialog()
+            }
+        }
+    }
+
+
+    private fun showNotificationPermissionDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Izin Notifikasi Dibutuhkan")
+            .setMessage("Agar deadline reminder dapat muncul, aplikasi membutuhkan izin notifikasi.")
+            .setPositiveButton("Izinkan") { _, _ ->
+                requestPermissions(
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    2001
+                )
+            }
+            .setNegativeButton("Batal", null)
+            .show()
     }
 
     // Hapus binding saat fragment dihancurkan

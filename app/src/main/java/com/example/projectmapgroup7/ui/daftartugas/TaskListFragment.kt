@@ -16,6 +16,8 @@ import com.example.projectmapgroup7.model.Task
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 // Fragment ini menampilkan daftar tugas (baik yang masih berjalan maupun yang sudah selesai)
 class TaskListFragment : Fragment() {
@@ -35,6 +37,19 @@ class TaskListFragment : Fragment() {
             args.putString("tabType", tabType)
             fragment.arguments = args
             return fragment
+        }
+    }
+
+    private fun formatDeadline(deadline: String?): String {
+        if (deadline.isNullOrEmpty()) return "-"
+
+        return try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+            val date = inputFormat.parse(deadline)
+            if (date != null) outputFormat.format(date) else deadline
+        } catch (e: Exception) {
+            deadline
         }
     }
 
@@ -122,7 +137,7 @@ class TaskListFragment : Fragment() {
 
             // 🔹 Tampilkan data dari objek task
             tvTitle.text = task.title
-            tvDeadline.text = "Deadline: ${task.deadline}"
+            tvDeadline.text = "Deadline: ${formatDeadline(task.deadline)}"
             setPriorityIndicator(task.prioritization, priorityIndicator, tvPriority) // Atur tampilan prioritas
 
             // 🔹 Event ketika checkbox diaktifkan atau dimatikan

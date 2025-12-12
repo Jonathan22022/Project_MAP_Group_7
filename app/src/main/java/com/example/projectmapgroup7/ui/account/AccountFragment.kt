@@ -213,6 +213,7 @@ class AccountFragment : Fragment() {
         val sharedPref = requireActivity().getSharedPreferences("user_session", AppCompatActivity.MODE_PRIVATE)
         val username = sharedPref.getString("username", "Guest")
         val profilePicture = sharedPref.getString("profile_picture", null)
+        val idUser = sharedPref.getString("id_user", null)
 
         tvUsername.text = username
 
@@ -226,7 +227,7 @@ class AccountFragment : Fragment() {
         }
 
         // Jika user bukan Guest → ambil data tambahan dari Supabase
-        if (username != "Guest") {
+        if (username != "Guest" && idUser != null) {
             viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     // Query data user dari tabel `users`
@@ -236,17 +237,38 @@ class AccountFragment : Fragment() {
                         }
                         .decodeSingle<Map<String, Any>>()
 
-                    // Hitung usia akun berdasarkan created_at
                     val createdAt = userData["created_at"]?.toString()
+
+                    // Hitung usia akun berdasarkan created_at
                     val accountAgeText = if (createdAt != null) {
                         calculateAccountAge(createdAt)
                     } else "- hari"
 
+                    // Hitung total task yang dimiliki user
+                    val totalTasksResult = client.postgrest["tasks"]
+                        .select {
+                            filter { eq("id_user", idUser) }
+                        }
+                        .decodeList<Map<String, Any>>()
+
+                    val totalTasks = totalTasksResult.size
+
+                    // Hitung total task selesai yang dimiliki user
+                    val completedTasksResult = client.postgrest["tasks"]
+                        .select {
+                            filter {
+                                eq("id_user", idUser)
+                                eq("is_complete", true)
+                            }
+                        }
+                        .decodeList<Map<String, Any>>()
+
+                    val completedTasks = completedTasksResult.size
                     // Update teks di UI
                     withContext(Dispatchers.Main) {
                         tvAccountAge.text = "Usia Akun: $accountAgeText"
-                        tvTotalTasks.text = "Total Tugas: 0"
-                        tvCompletedTasks.text = "Tugas Selesai: 0"
+                        tvTotalTasks.text = "Total Tugas: $totalTasks"
+                        tvCompletedTasks.text = "Tugas Selesai: $completedTasks"
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -264,8 +286,8 @@ class AccountFragment : Fragment() {
             val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
             val createdDate = formatter.parse(createdAt)
             val now = Date()
-            val diff = now.time - (createdDate?.time ?: now.time)
-            val days = diff / (1000 * 60 * 60 * 24)
+            val diffMillis = now.time - (createdDate?.time ?: now.time)
+            val days = diffMillis / (1000 * 60 * 60 * 24)
             "$days hari"
         } catch (e: Exception) {
             "- hari"

@@ -8,17 +8,20 @@
     tools:context=".ui.daftartugas.DaftarTugasFragment">
 
     <!-- Tab Bar -->
+
+    <!-- TAB LAYOUT -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="70dp"
         android:background="@color/white"
-        app:tabIndicatorColor="@color/purple_500"
+        app:tabIndicatorColor="#1E88E5"
+        app:tabSelectedTextColor="#1E88E5"
         app:tabTextColor="@color/gray"
-        app:tabSelectedTextColor="@color/purple_500"
         app:tabMode="fixed" />
 
-    <!-- ViewPager untuk isi tab -->
+    <!-- VIEWPAGER2 -->
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
         android:layout_width="match_parent"

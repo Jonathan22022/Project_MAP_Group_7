@@ -8,9 +8,10 @@ plugins {
 }
 
 val secretsPropertiesFile = rootProject.file("secrets.properties")
-val secretsProperties = Properties()
-if (secretsPropertiesFile.exists()) {
-    secretsProperties.load(secretsPropertiesFile.inputStream())
+val secretsProperties = Properties().apply {
+    if (secretsPropertiesFile.exists()) {
+        load(secretsPropertiesFile.inputStream())
+    }
 }
 
 android {
@@ -25,12 +26,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val supabaseUrl = secretsProperties["SUPABASE_URL"]?.toString() ?: ""
-        val supabaseKey = secretsProperties["SUPABASE_KEY"]?.toString() ?: ""
 
-        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
-        buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
-
+        buildConfigField("String", "SUPABASE_URL", "\"${secretsProperties["SUPABASE_URL"] ?: ""}\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"${secretsProperties["SUPABASE_KEY"] ?: ""}\"")
     }
 
     buildTypes {
@@ -42,13 +40,13 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+    kotlinOptions { jvmTarget = "11" }
+
     buildFeatures {
         viewBinding = true
         buildConfig = true
@@ -62,24 +60,31 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    implementation("io.github.jan-tennert.supabase:supabase-kt:2.5.1")
     implementation("io.github.jan-tennert.supabase:postgrest-kt:2.5.1")
     implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.1")
     implementation("io.github.jan-tennert.supabase:storage-kt:2.5.1")
     implementation("io.github.jan-tennert.supabase:realtime-kt:2.5.1")
-    implementation("io.github.jan-tennert.supabase:supabase-kt:2.5.1")
+
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
+
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
     implementation("io.ktor:ktor-client-android:2.3.8")
     implementation("io.ktor:ktor-client-json:2.3.8")
     implementation("io.ktor:ktor-client-okhttp:2.3.8")
     implementation("io.ktor:ktor-client-serialization:2.3.8")
+
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation(libs.androidx.material3.android)
+    implementation(libs.androidbrowserhelper)
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -88,6 +93,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
