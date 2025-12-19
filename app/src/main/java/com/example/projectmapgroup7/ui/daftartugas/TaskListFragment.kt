@@ -9,200 +9,137 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.viewModels
 import com.example.projectmapgroup7.R
-import com.example.projectmapgroup7.data.remote.SupabaseClientInstance
 import com.example.projectmapgroup7.model.Task
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Locale
+import com.example.projectmapgroup7.viewmodel.TaskViewModel
 
 // Fragment ini menampilkan daftar tugas (baik yang masih berjalan maupun yang sudah selesai)
 class TaskListFragment : Fragment() {
 
-    // 🔹 Deklarasi komponen UI
-    private lateinit var containerTugas: LinearLayout           // Container untuk menampung item tugas
-    private lateinit var fabDelete: FloatingActionButton         // Tombol FAB untuk menghapus tugas
-    private val selectedTasks = mutableListOf<String>()          // Menyimpan judul tugas yang dipilih user
+    private lateinit var containerTugas: LinearLayout
+    private lateinit var fabDelete: FloatingActionButton
 
-    private var tabType: String = "progress" // Default tab → menampilkan tugas yang masih dalam progres
+    private val viewModel: TaskViewModel by viewModels()
+    private val selectedTasks = mutableListOf<String>()
+
+    private var isComplete = false
 
     companion object {
-        // 🔹 Fungsi pembuat instance baru fragment berdasarkan jenis tab (progress/selesai)
-        fun newInstance(tabType: String): TaskListFragment {
-            val fragment = TaskListFragment()
-            val args = Bundle()
-            args.putString("tabType", tabType)
-            fragment.arguments = args
-            return fragment
+        fun newInstance(isComplete: Boolean): TaskListFragment {
+            return TaskListFragment().apply {
+                arguments = Bundle().apply {
+                    putBoolean("isComplete", isComplete)
+                }
+            }
         }
     }
 
-    private fun formatDeadline(deadline: String?): String {
-        if (deadline.isNullOrEmpty()) return "-"
-
-        return try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            val outputFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-            val date = inputFormat.parse(deadline)
-            if (date != null) outputFormat.format(date) else deadline
-        } catch (e: Exception) {
-            deadline
-        }
-    }
-
-    // 🔹 Ambil nilai tabType dari argumen yang dikirim
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        tabType = arguments?.getString("tabType") ?: "progress"
+        isComplete = arguments?.getBoolean("isComplete") ?: false
     }
 
-    // 🔹 Buat dan atur tampilan utama fragment
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_task_list, container, false)
 
-        // Inisialisasi elemen tampilan dari layout XML
         containerTugas = view.findViewById(R.id.containerTugas)
         fabDelete = view.findViewById(R.id.fabDelete)
 
-        // Saat tombol FAB ditekan → hapus tugas yang dipilih
-        fabDelete.setOnClickListener { deleteSelectedTasks() }
+        fabDelete.setOnClickListener { deleteSelected() }
 
-        // Muat data tugas dari Supabase
+        observeViewModel()
         loadTasks()
 
         return view
     }
 
-    // 🔹 Fungsi untuk memuat daftar tugas dari database Supabase
     private fun loadTasks() {
-        lifecycleScope.launch {
-            try {
-                // Ambil ID user dari SharedPreferences (penanda pengguna yang login)
-                val sharedPref = requireActivity().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE)
-                val idUser = sharedPref.getString("id_user", null) ?: return@launch
+        val pref = requireActivity()
+            .getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE)
 
-                // Tentukan apakah tab sedang menampilkan tugas selesai atau belum
-                val isComplete = (tabType == "selesai")
+        val userId = pref.getString("id_user", null) ?: return
+        viewModel.loadTasks(userId, isComplete)
+    }
 
-                // 🔹 Query ke tabel “tasks” di Supabase
-                // Filter berdasarkan id_user dan status is_complete
-                val tasks = SupabaseClientInstance.client.postgrest["tasks"]
-                    .select {
-                        filter {
-                            eq("id_user", idUser)
-                            eq("is_complete", isComplete)
-                        }
-                    }
-                    .decodeList<Task>() // Konversi hasil query menjadi list of Task (model data)
+    private fun observeViewModel() {
+        viewModel.tasks.observe(viewLifecycleOwner) {
+            displayTasks(it)
+        }
 
-                // Tampilkan hasil ke tampilan
-                displayTasks(tasks)
-
-            } catch (e: Exception) {
-                // Tangani error jika koneksi atau query gagal
-                Toast.makeText(requireContext(), "Gagal memuat tugas: ${e.message}", Toast.LENGTH_LONG).show()
+        viewModel.error.observe(viewLifecycleOwner) {
+            it?.let { msg ->
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    // 🔹 Fungsi untuk menampilkan daftar tugas ke dalam container (LinearLayout)
+    private fun deleteSelected() {
+        val pref = requireActivity()
+            .getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE)
+
+        val userId = pref.getString("id_user", null) ?: return
+
+        viewModel.deleteTasks(userId, selectedTasks) {
+            selectedTasks.clear()
+            fabDelete.visibility = View.GONE
+            loadTasks()
+        }
+    }
+
     private fun displayTasks(tasks: List<Task>) {
-        containerTugas.removeAllViews() // Kosongkan container sebelum menambahkan data baru
+        containerTugas.removeAllViews()
         val inflater = LayoutInflater.from(requireContext())
 
-        // Jika tidak ada tugas → tampilkan tampilan kosong
         if (tasks.isEmpty()) {
-            val emptyView = inflater.inflate(R.layout.item_empty_task, containerTugas, false)
-            containerTugas.addView(emptyView)
+            containerTugas.addView(
+                inflater.inflate(R.layout.item_empty_task, containerTugas, false)
+            )
             return
         }
 
-        // Loop setiap data tugas dan tampilkan satu per satu
-        for (task in tasks) {
-            // Gunakan layout item_task.xml untuk setiap item
+        tasks.forEach { task ->
             val view = inflater.inflate(R.layout.item_task, containerTugas, false)
 
-            // 🔹 Ambil komponen tampilan dari item_task.xml
-            val tvTitle = view.findViewById<TextView>(R.id.tvTaskTitle)          // Judul tugas
-            val tvDeadline = view.findViewById<TextView>(R.id.tvTaskDeadline)    // Tanggal deadline
-            val tvPriority = view.findViewById<TextView>(R.id.tvTaskPriority)    // Prioritas tugas
-            val cbSelect = view.findViewById<CheckBox>(R.id.cbSelectTask)        // Checkbox untuk memilih tugas
-            val priorityIndicator = view.findViewById<View>(R.id.priorityIndicator) // Warna indikator prioritas
+            val tvTitle = view.findViewById<TextView>(R.id.tvTaskTitle)
+            val tvDeadline = view.findViewById<TextView>(R.id.tvTaskDeadline)
+            val tvPriority = view.findViewById<TextView>(R.id.tvTaskPriority)
+            val cbSelect = view.findViewById<CheckBox>(R.id.cbSelectTask)
+            val indicator = view.findViewById<View>(R.id.priorityIndicator)
 
-            // 🔹 Tampilkan data dari objek task
             tvTitle.text = task.title
-            tvDeadline.text = "Deadline: ${formatDeadline(task.deadline)}"
-            setPriorityIndicator(task.prioritization, priorityIndicator, tvPriority) // Atur tampilan prioritas
+            tvDeadline.text = "Deadline: ${task.deadline}"
 
-            // 🔹 Event ketika checkbox diaktifkan atau dimatikan
-            cbSelect.setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) selectedTasks.add(task.title)  // Tambahkan judul ke daftar pilihan
-                else selectedTasks.remove(task.title)         // Hapus dari daftar jika tidak dicentang
+            cbSelect.setOnCheckedChangeListener { _, checked ->
+                if (checked) selectedTasks.add(task.title)
+                else selectedTasks.remove(task.title)
 
-                // Jika ada tugas yang dipilih → tampilkan tombol hapus
-                fabDelete.visibility = if (selectedTasks.isNotEmpty()) View.VISIBLE else View.GONE
+                fabDelete.visibility =
+                    if (selectedTasks.isNotEmpty()) View.VISIBLE else View.GONE
             }
 
-            // Tambahkan tampilan item ke dalam container utama
+            setPriorityIndicator(task.prioritization, indicator, tvPriority)
             containerTugas.addView(view)
         }
     }
 
-    // 🔹 Fungsi untuk menghapus semua tugas yang dipilih user
-    private fun deleteSelectedTasks() {
-        lifecycleScope.launch {
-            try {
-                // Ambil ID user dari SharedPreferences
-                val sharedPref = requireActivity().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE)
-                val idUser = sharedPref.getString("id_user", null) ?: return@launch
-
-                // 🔹 Hapus setiap tugas berdasarkan judul & id_user
-                selectedTasks.forEach { title ->
-                    SupabaseClientInstance.client.postgrest["tasks"].delete {
-                        filter {
-                            eq("title", title)
-                            eq("id_user", idUser)
-                        }
-                    }
-                }
-
-                // 🔹 Setelah penghapusan selesai, perbarui UI
-                Toast.makeText(requireContext(), "Tugas berhasil dihapus", Toast.LENGTH_SHORT).show()
-                selectedTasks.clear()             // Kosongkan daftar tugas terpilih
-                fabDelete.visibility = View.GONE  // Sembunyikan tombol hapus
-                loadTasks()                       // Muat ulang daftar tugas
-
-            } catch (e: Exception) {
-                // Tangani error saat proses hapus gagal
-                Toast.makeText(requireContext(), "Gagal menghapus: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    // 🔹 Fungsi untuk menampilkan indikator warna dan teks prioritas
-    private fun setPriorityIndicator(priority: String, indicator: View, textView: TextView) {
+    private fun setPriorityIndicator(priority: String, indicator: View, tv: TextView) {
         when (priority.lowercase()) {
             "tinggi" -> {
-                indicator.setBackgroundColor(resources.getColor(R.color.priority_high, null)) // Warna merah
-                textView.text = "Prioritas: Tinggi"
+                indicator.setBackgroundColor(resources.getColor(R.color.priority_high, null))
+                tv.text = "Prioritas: Tinggi"
             }
             "sedang" -> {
-                indicator.setBackgroundColor(resources.getColor(R.color.priority_medium, null)) // Warna kuning
-                textView.text = "Prioritas: Sedang"
+                indicator.setBackgroundColor(resources.getColor(R.color.priority_medium, null))
+                tv.text = "Prioritas: Sedang"
             }
             "rendah" -> {
-                indicator.setBackgroundColor(resources.getColor(R.color.priority_low, null)) // Warna biru
-                textView.text = "Prioritas: Rendah"
-            }
-            else -> {
-                indicator.setBackgroundColor(resources.getColor(android.R.color.darker_gray, null)) // Default abu-abu
-                textView.text = "Prioritas: -"
+                indicator.setBackgroundColor(resources.getColor(R.color.priority_low, null))
+                tv.text = "Prioritas: Rendah"
             }
         }
     }

@@ -4,6 +4,7 @@
     android:id="@+id/swipeRefresh"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ui.insight.WeeklyInsightFragment">
 
     <ScrollView
@@ -18,99 +19,139 @@
             android:orientation="vertical">
 
             <!-- Judul -->
-            <TextView
-                android:id="@+id/tvJudul"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Insight Produktivitas Mingguan"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginTop="70dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
 
-            <!-- Chart: Tugas Selesai vs Tertunda -->
-            <TextView
+                <TextView
+                    android:id="@+id/tvJudul"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="Insight Produktivitas Mingguan"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:gravity="center" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Chart -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Distribusi Tugas per Hari"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
 
-            <com.github.mikephil.charting.charts.BarChart
-                android:id="@+id/barChart"
-                android:layout_width="match_parent"
-                android:layout_height="220dp"
-                android:layout_marginBottom="24dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Distribusi Tugas per Hari"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/barChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="220dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Ringkasan -->
-            <TextView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Ringkasan"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
 
-            <TextView
-                android:id="@+id/tvSummaryCompleted"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Tugas Selesai: 0"
-                android:textSize="14sp"
-                android:layout_marginBottom="4dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-            <TextView
-                android:id="@+id/tvSummaryPending"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Tugas Tertunda: 0"
-                android:textSize="14sp"
-                android:layout_marginBottom="4dp" />
+                    <TextView
+                        android:text="Ringkasan"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp"
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"/>
 
-            <TextView
-                android:id="@+id/tvMostProductive"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Waktu Paling Produktif: -"
-                android:textSize="14sp"
-                android:layout_marginBottom="4dp" />
+                    <TextView
+                        android:id="@+id/tvSummaryCompleted"
+                        android:text="Tugas Selesai: 0"
+                        android:textSize="14sp"
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"/>
 
-            <TextView
-                android:id="@+id/tvPostponedType"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Tipe Tugas Paling Sering Ditunda: -"
-                android:textSize="14sp"
-                android:layout_marginBottom="16dp" />
+                    <TextView
+                        android:id="@+id/tvSummaryPending"
+                        android:text="Tugas Tertunda: 0"
+                        android:textSize="14sp"
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"/>
 
-            <!-- Saran -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Saran Data Mining"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                    <TextView
+                        android:id="@+id/tvMostProductive"
+                        android:text="Hari Paling Produktif: -"
+                        android:textSize="14sp"
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <TextView
-                android:id="@+id/tvSuggestion"
+            <!-- Saran & Cluster -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Saran akan muncul di sini..."
-                android:textSize="14sp"
-                android:lineSpacingExtra="4dp"
-                android:layout_marginBottom="16dp" />
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
 
-            <!-- Ringkasan Cluster -->
-            <TextView
-                android:id="@+id/tvClusterSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Ringkasan Cluster akan muncul di sini..."
-                android:textSize="13sp"
-                android:layout_marginBottom="8dp"
-                android:lineSpacingExtra="4dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="70dp"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:text="Saran Data Mining"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp"
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/tvSuggestion"
+                        android:text="Saran akan muncul di sini..."
+                        android:textSize="14sp"
+                        android:lineSpacingExtra="4dp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/tvClusterSummary"
+                        android:text="Ringkasan Cluster akan muncul di sini..."
+                        android:textSize="13sp"
+                        android:lineSpacingExtra="4dp"
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </ScrollView>
