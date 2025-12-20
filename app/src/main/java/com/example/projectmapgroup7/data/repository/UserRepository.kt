@@ -1,8 +1,11 @@
 package com.example.projectmapgroup7.data.repository
 
+import android.content.Context
+import android.net.Uri
 import com.example.projectmapgroup7.data.model.User
 import com.example.projectmapgroup7.data.remote.SupabaseClientInstance
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
 
 class UserRepository {
 
@@ -51,5 +54,28 @@ class UserRepository {
             }
             .decodeList<Map<String, Any>>()
             .size
+    }
+
+    suspend fun uploadProfilePicture(
+        context: Context,
+        uri: Uri,
+        username: String
+    ): String {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        val bytes = inputStream!!.readBytes()
+
+        val fileName = "profile_${username}_${System.currentTimeMillis()}.jpg"
+        val storage = client.storage.from("profile_pictures")
+
+        storage.upload(fileName, bytes, upsert = true)
+        val publicUrl = storage.publicUrl(fileName)
+
+        client.postgrest["users"].update(
+            { set("profile_picture", publicUrl) }
+        ) {
+            filter { eq("username", username) }
+        }
+
+        return publicUrl
     }
 }
