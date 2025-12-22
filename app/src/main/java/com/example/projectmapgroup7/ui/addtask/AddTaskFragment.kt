@@ -26,17 +26,28 @@ import java.util.*
 
 class AddTaskFragment : Fragment() {
 
+    // ViewBinding untuk FragmentAddTask
+    // _binding digunakan untuk lifecycle Fragment (di-null saat onDestroyView)
     private var _binding: FragmentAddTaskBinding? = null
     private val binding get() = _binding!!
 
+    // ViewModel untuk mengelola logika penambahan task
     private lateinit var viewModel: AddTaskViewModel
+
+    // Calendar untuk menyimpan tanggal & waktu deadline
     private val calendar = Calendar.getInstance()
+
+    // URI gambar task (kamera / galeri)
     private var imageUri: Uri? = null
 
+    /**
+     * Launcher kamera
+     * Mengambil foto dari kamera dan mengembalikan bitmap preview
+     */
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
             bitmap?.let {
-                // Simpan hasil foto ke MediaStore dan dapatkan URI-nya
+                // Simpan bitmap ke MediaStore dan ambil URI-nya
                 val uri = MediaStore.Images.Media.insertImage(
                     requireContext().contentResolver,
                     it,
@@ -44,11 +55,16 @@ class AddTaskFragment : Fragment() {
                     null
                 )
                 imageUri = Uri.parse(uri)
-                binding.previewGambar.setImageURI(imageUri) // tampilkan foto di ImageView
+
+                // Tampilkan foto ke ImageView preview
+                binding.previewGambar.setImageURI(imageUri)
             }
         }
 
-    // === Launcher galeri (ambil gambar dari penyimpanan) ===
+    /**
+     * Launcher galeri
+     * Mengambil gambar dari penyimpanan perangkat
+     */
     private val galleryLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             uri?.let {
@@ -57,17 +73,27 @@ class AddTaskFragment : Fragment() {
             }
         }
 
-    // === Launcher untuk meminta izin kamera/galeri ===
+    /**
+     * Launcher permintaan izin kamera & galeri
+     */
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val denied = permissions.filterValues { !it }.keys
             if (denied.isEmpty()) {
-                showImageSourceDialog() // jika semua izin diberikan
+                // Jika semua izin diberikan, tampilkan dialog pilihan sumber gambar
+                showImageSourceDialog()
             } else {
-                Toast.makeText(requireContext(), "Izin kamera & galeri diperlukan", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Izin kamera & galeri diperlukan",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
+    /**
+     * Callback hasil permintaan izin (khusus izin notifikasi)
+     */
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -76,39 +102,51 @@ class AddTaskFragment : Fragment() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         if (requestCode == 2001) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            ) {
                 Log.d("AddTask", "Izin notifikasi DISETUJUI")
             } else {
                 Log.w("AddTask", "Izin notifikasi DITOLAK")
             }
         }
     }
+
+    /**
+     * Mengecek izin kamera dan galeri sebelum memilih gambar
+     */
     private fun checkPermissionsAndShowDialog() {
         val permissionsNeeded = mutableListOf<String>()
 
         // Cek izin kamera
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
-            != android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             permissionsNeeded.add(Manifest.permission.CAMERA)
         }
 
-        // Cek izin membaca gambar (berbeda untuk Android 13+)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_IMAGES)
-                != android.content.pm.PackageManager.PERMISSION_GRANTED
+        // Cek izin membaca gambar (berbeda antara Android 13+ dan versi lama)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.READ_MEDIA_IMAGES
+                ) != PackageManager.PERMISSION_GRANTED
             ) {
                 permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES)
             }
         } else {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE)
-                != android.content.pm.PackageManager.PERMISSION_GRANTED
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
             ) {
                 permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
         }
 
-        // Jika sudah diizinkan semua → tampilkan dialog pilih sumber gambar
+        // Jika semua izin sudah diberikan
         if (permissionsNeeded.isEmpty()) {
             showImageSourceDialog()
         } else {
@@ -116,7 +154,9 @@ class AddTaskFragment : Fragment() {
         }
     }
 
-    // === Dialog untuk memilih sumber gambar ===
+    /**
+     * Dialog untuk memilih sumber gambar (kamera atau galeri)
+     */
     private fun showImageSourceDialog() {
         val options = arrayOf("Ambil Foto", "Pilih dari Galeri")
 
@@ -129,7 +169,12 @@ class AddTaskFragment : Fragment() {
                 }
             }
             .show()
-    }private fun checkNotificationPermission() {
+    }
+
+    /**
+     * Mengecek izin notifikasi (Android 13+)
+     */
+    private fun checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     requireContext(),
@@ -141,10 +186,15 @@ class AddTaskFragment : Fragment() {
         }
     }
 
+    /**
+     * Dialog permintaan izin notifikasi
+     */
     private fun showNotificationPermissionDialog() {
         AlertDialog.Builder(requireContext())
             .setTitle("Izin Notifikasi Dibutuhkan")
-            .setMessage("Agar deadline reminder dapat muncul, aplikasi membutuhkan izin notifikasi.")
+            .setMessage(
+                "Agar deadline reminder dapat muncul, aplikasi membutuhkan izin notifikasi."
+            )
             .setPositiveButton("Izinkan") { _, _ ->
                 requestPermissions(
                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),
@@ -154,20 +204,34 @@ class AddTaskFragment : Fragment() {
             .setNegativeButton("Batal", null)
             .show()
     }
+
+    /**
+     * Lifecycle Fragment untuk membuat tampilan UI
+     */
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+
+        // Inisialisasi ViewBinding
         _binding = FragmentAddTaskBinding.inflate(inflater, container, false)
+
+        // Inisialisasi ViewModel
         viewModel = ViewModelProvider(this)[AddTaskViewModel::class.java]
 
+        // Setup date & time picker
         setupDateTimePicker()
+
+        // Setup observer LiveData
         setupObservers()
 
+        // Klik tombol upload gambar
         binding.btnUploadGambar.setOnClickListener {
             checkPermissionsAndShowDialog()
         }
 
+        // Klik tombol tambah tugas
         binding.btnTambahTugas.setOnClickListener {
             submitTask()
             checkNotificationPermission()
@@ -176,16 +240,21 @@ class AddTaskFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Mengirim data task ke ViewModel
+     */
     private fun submitTask() {
         val title = binding.inputJudul.text.toString().trim()
         val desc = binding.inputDeskripsi.text.toString().trim()
         val deadline = binding.tvTanggal.text.toString().trim()
 
+        // Validasi input
         if (title.isEmpty() || desc.isEmpty() || deadline.isEmpty()) {
             toast("Lengkapi semua kolom!")
             return
         }
 
+        // Ambil userId dari SharedPreferences
         val userId = requireActivity()
             .getSharedPreferences("user_session", Context.MODE_PRIVATE)
             .getString("id_user", null)
@@ -195,9 +264,13 @@ class AddTaskFragment : Fragment() {
             return
         }
 
+        // Panggil ViewModel untuk menambahkan task
         viewModel.addTask(title, desc, deadline, imageUri, userId)
     }
 
+    /**
+     * Observer untuk status penambahan task
+     */
     private fun setupObservers() {
         viewModel.addTaskState.observe(viewLifecycleOwner) { result ->
             result.onSuccess {
@@ -210,7 +283,9 @@ class AddTaskFragment : Fragment() {
         }
     }
 
-    // ===== DATE TIME =====
+    /**
+     * Setup DatePicker & TimePicker untuk deadline
+     */
     private fun setupDateTimePicker() {
         binding.btnPilihTanggal.setOnClickListener {
             DatePickerDialog(
@@ -237,11 +312,20 @@ class AddTaskFragment : Fragment() {
         }
     }
 
+    /**
+     * Menampilkan tanggal & waktu yang dipilih ke TextView
+     */
     private fun updateDateTimeText() {
-        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val sdf = SimpleDateFormat(
+            "yyyy-MM-dd HH:mm:ss",
+            Locale.getDefault()
+        )
         binding.tvTanggal.text = sdf.format(calendar.time)
     }
 
+    /**
+     * Mengosongkan semua input setelah task berhasil ditambahkan
+     */
     private fun clearInput() {
         binding.inputJudul.text.clear()
         binding.inputDeskripsi.text.clear()
@@ -250,10 +334,16 @@ class AddTaskFragment : Fragment() {
         imageUri = null
     }
 
+    /**
+     * Helper untuk menampilkan Toast
+     */
     private fun toast(msg: String) {
         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
     }
 
+    /**
+     * Membersihkan binding saat Fragment dihancurkan
+     */
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

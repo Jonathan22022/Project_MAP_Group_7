@@ -20,16 +20,39 @@ import com.bumptech.glide.Glide
 import com.example.projectmapgroup7.R
 import com.example.projectmapgroup7.viewmodel.SettingViewModel
 
+/**
+ * SettingFragment
+ *
+ * Fragment ini berfungsi sebagai halaman pengaturan aplikasi.
+ * Fitur utama yang disediakan:
+ * 1. Mengubah foto profil (kamera / galeri)
+ * 2. Mengatur tema aplikasi (Light / Dark Mode)
+ * 3. Mengatur notifikasi global
+ * 4. Menampilkan informasi akun pengguna
+ *
+ * Arsitektur: MVVM
+ * Upload foto profil ditangani oleh SettingViewModel
+ */
 class SettingFragment : Fragment() {
 
+    // ViewModel untuk menangani logika upload foto profil
     private val viewModel: SettingViewModel by viewModels()
+
+    // URI gambar profil yang sedang dipilih
     private var currentImageUri: Uri? = null
 
-    // =====================
-    // CAMERA & GALLERY
-    // =====================
+    // =================================================
+    // CAMERA & GALLERY LAUNCHER
+    // =================================================
+
+    /**
+     * Launcher untuk mengambil foto dari kamera
+     * Menghasilkan Bitmap lalu disimpan ke MediaStore
+     */
     private val cameraLauncher =
-        registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        registerForActivityResult(
+            ActivityResultContracts.TakePicturePreview()
+        ) { bitmap ->
             bitmap?.let {
                 val uri = MediaStore.Images.Media.insertImage(
                     requireContext().contentResolver,
@@ -42,14 +65,24 @@ class SettingFragment : Fragment() {
             }
         }
 
+    /**
+     * Launcher untuk memilih gambar dari galeri
+     */
     private val galleryLauncher =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        registerForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri ->
             currentImageUri = uri
             if (uri != null) uploadProfilePicture()
         }
 
+    /**
+     * Launcher untuk meminta izin kamera dan galeri
+     */
     private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
             if (permissions.values.all { it }) {
                 showImageSourceDialog()
             } else {
@@ -61,33 +94,57 @@ class SettingFragment : Fragment() {
             }
         }
 
-    // =====================
+    // =================================================
     // LIFECYCLE
-    // =====================
+    // =================================================
+
+    /**
+     * Membuat dan menampilkan tampilan SettingFragment
+     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
 
-        val view = inflater.inflate(R.layout.fragment_setting, container, false)
+        // Inflate layout fragment_setting.xml
+        val view = inflater.inflate(
+            R.layout.fragment_setting,
+            container,
+            false
+        )
+
+        // Terapkan tema yang tersimpan
         applySavedTheme()
+
+        // Setup fitur-fitur setting
         setupThemeSwitch(view)
         setupNotificationSwitch(view)
         setupAccountDialog(view)
+
+        // Observer ViewModel
         observeViewModel()
 
         return view
     }
 
-    // =====================
-    // OBSERVER
-    // =====================
+    // =================================================
+    // OBSERVER VIEWMODEL
+    // =================================================
+
+    /**
+     * Mengamati hasil upload foto profil
+     */
     private fun observeViewModel() {
         viewModel.uploadResult.observe(viewLifecycleOwner) { result ->
             result.onSuccess { url ->
+
+                // Simpan URL foto profil ke SharedPreferences
                 val sharedPref = requireActivity()
-                    .getSharedPreferences("user_session", AppCompatActivity.MODE_PRIVATE)
+                    .getSharedPreferences(
+                        "user_session",
+                        AppCompatActivity.MODE_PRIVATE
+                    )
 
                 sharedPref.edit()
                     .putString("profile_picture", url)
@@ -110,23 +167,35 @@ class SettingFragment : Fragment() {
         }
     }
 
-    // =====================
+    // =================================================
     // ACCOUNT DIALOG
-    // =====================
+    // =================================================
+
+    /**
+     * Menampilkan dialog akun pengguna
+     * Berisi foto profil, username, dan tombol ubah foto
+     */
     private fun setupAccountDialog(view: View) {
 
-        val layoutAccount = view.findViewById<LinearLayout>(R.id.layoutAccount)
+        val layoutAccount =
+            view.findViewById<LinearLayout>(R.id.layoutAccount)
 
         layoutAccount.setOnClickListener {
 
-            val dialogView = layoutInflater.inflate(R.layout.dialog_account, null)
+            val dialogView =
+                layoutInflater.inflate(R.layout.dialog_account, null)
 
-            val imgProfile = dialogView.findViewById<ImageView>(R.id.imgProfile)
-            val tvUsername = dialogView.findViewById<TextView>(R.id.tvUsername)
-            val btnChangePhoto = dialogView.findViewById<Button>(R.id.btnChangePhoto)
+            val imgProfile =
+                dialogView.findViewById<ImageView>(R.id.imgProfile)
+            val tvUsername =
+                dialogView.findViewById<TextView>(R.id.tvUsername)
+            val btnChangePhoto =
+                dialogView.findViewById<Button>(R.id.btnChangePhoto)
 
+            // Load data user dari SharedPreferences
             loadUserData(imgProfile, tvUsername)
 
+            // Aksi ubah foto profil
             btnChangePhoto.setOnClickListener {
                 checkPermissionsAndShowDialog()
             }
@@ -137,16 +206,28 @@ class SettingFragment : Fragment() {
         }
     }
 
-    // =====================
+    // =================================================
     // LOAD USER DATA
-    // =====================
-    private fun loadUserData(imageProfile: ImageView, tvUsername: TextView) {
+    // =================================================
+
+    /**
+     * Memuat username dan foto profil user
+     */
+    private fun loadUserData(
+        imageProfile: ImageView,
+        tvUsername: TextView
+    ) {
 
         val sharedPref = requireActivity()
-            .getSharedPreferences("user_session", AppCompatActivity.MODE_PRIVATE)
+            .getSharedPreferences(
+                "user_session",
+                AppCompatActivity.MODE_PRIVATE
+            )
 
-        val username = sharedPref.getString("username", "Guest")
-        val profilePicture = sharedPref.getString("profile_picture", null)
+        val username =
+            sharedPref.getString("username", "Guest")
+        val profilePicture =
+            sharedPref.getString("profile_picture", null)
 
         tvUsername.text = username
 
@@ -158,13 +239,19 @@ class SettingFragment : Fragment() {
         }
     }
 
-    // =====================
-    // PERMISSION
-    // =====================
+    // =================================================
+    // PERMISSION HANDLING
+    // =================================================
+
+    /**
+     * Mengecek izin kamera dan galeri
+     * Menyesuaikan dengan versi Android
+     */
     private fun checkPermissionsAndShowDialog() {
 
         val permissionsNeeded = mutableListOf<String>()
 
+        // Izin kamera
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.CAMERA
@@ -173,13 +260,18 @@ class SettingFragment : Fragment() {
             permissionsNeeded.add(Manifest.permission.CAMERA)
         }
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        // Izin galeri (Android 13+ dan di bawahnya)
+        if (android.os.Build.VERSION.SDK_INT >=
+            android.os.Build.VERSION_CODES.TIRAMISU
+        ) {
             if (ContextCompat.checkSelfPermission(
                     requireContext(),
                     Manifest.permission.READ_MEDIA_IMAGES
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES)
+                permissionsNeeded.add(
+                    Manifest.permission.READ_MEDIA_IMAGES
+                )
             }
         } else {
             if (ContextCompat.checkSelfPermission(
@@ -187,23 +279,35 @@ class SettingFragment : Fragment() {
                     Manifest.permission.READ_EXTERNAL_STORAGE
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                permissionsNeeded.add(
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                )
             }
         }
 
         if (permissionsNeeded.isEmpty()) {
             showImageSourceDialog()
         } else {
-            requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
+            requestPermissionLauncher.launch(
+                permissionsNeeded.toTypedArray()
+            )
         }
     }
 
-    // =====================
-    // IMAGE SOURCE
-    // =====================
+    // =================================================
+    // IMAGE SOURCE DIALOG
+    // =================================================
+
+    /**
+     * Menampilkan pilihan sumber gambar:
+     * Kamera atau Galeri
+     */
     private fun showImageSourceDialog() {
 
-        val options = arrayOf("Ambil Foto", "Pilih dari Galeri")
+        val options = arrayOf(
+            "Ambil Foto",
+            "Pilih dari Galeri"
+        )
 
         AlertDialog.Builder(requireContext())
             .setTitle("Ubah Foto Profil")
@@ -216,35 +320,57 @@ class SettingFragment : Fragment() {
             .show()
     }
 
-    // =====================
-    // UPLOAD VIA VIEWMODEL
-    // =====================
+    // =================================================
+    // UPLOAD FOTO PROFIL
+    // =================================================
+
+    /**
+     * Mengirim foto profil ke ViewModel untuk diupload
+     */
     private fun uploadProfilePicture() {
 
         val uri = currentImageUri ?: return
 
         val sharedPref = requireActivity()
-            .getSharedPreferences("user_session", AppCompatActivity.MODE_PRIVATE)
+            .getSharedPreferences(
+                "user_session",
+                AppCompatActivity.MODE_PRIVATE
+            )
 
-        val username = sharedPref.getString("username", "Guest") ?: return
+        val username =
+            sharedPref.getString("username", "Guest")
+                ?: return
 
         viewModel.uploadProfilePicture(uri, username)
     }
 
-    // =====================
-    // THEME
-    // =====================
+    // =================================================
+    // THEME SETTING
+    // =================================================
+
+    /**
+     * Switch untuk mengatur Dark / Light Mode
+     */
     private fun setupThemeSwitch(view: View) {
 
-        val switchTheme = view.findViewById<Switch>(R.id.switchTheme)
-        val sharedPref = requireActivity()
-            .getSharedPreferences("app_settings", AppCompatActivity.MODE_PRIVATE)
+        val switchTheme =
+            view.findViewById<Switch>(R.id.switchTheme)
 
-        val isDarkMode = sharedPref.getBoolean("dark_mode", false)
+        val sharedPref = requireActivity()
+            .getSharedPreferences(
+                "app_settings",
+                AppCompatActivity.MODE_PRIVATE
+            )
+
+        val isDarkMode =
+            sharedPref.getBoolean("dark_mode", false)
+
         switchTheme.isChecked = isDarkMode
 
         switchTheme.setOnCheckedChangeListener { _, isChecked ->
-            sharedPref.edit().putBoolean("dark_mode", isChecked).apply()
+            sharedPref.edit()
+                .putBoolean("dark_mode", isChecked)
+                .apply()
 
             AppCompatDelegate.setDefaultNightMode(
                 if (isChecked)
@@ -255,26 +381,43 @@ class SettingFragment : Fragment() {
         }
     }
 
-    // =====================
-    // NOTIFICATION
-    // =====================
+    // =================================================
+    // NOTIFICATION SETTING
+    // =================================================
+
+    /**
+     * Switch untuk mengatur notifikasi global
+     */
     private fun setupNotificationSwitch(view: View) {
 
-        val switchNotification = view.findViewById<Switch>(R.id.switchNotification)
+        val switchNotification =
+            view.findViewById<Switch>(R.id.switchNotification)
+
         val sharedPref = requireActivity()
-            .getSharedPreferences("app_settings", AppCompatActivity.MODE_PRIVATE)
+            .getSharedPreferences(
+                "app_settings",
+                AppCompatActivity.MODE_PRIVATE
+            )
 
         switchNotification.isChecked =
-            sharedPref.getBoolean("global_notification", true)
+            sharedPref.getBoolean(
+                "global_notification",
+                true
+            )
 
         switchNotification.setOnCheckedChangeListener { _, isChecked ->
             if (!isChecked) {
                 AlertDialog.Builder(requireContext())
                     .setTitle("Matikan Notifikasi?")
-                    .setMessage("Pengingat deadline tidak akan muncul.")
+                    .setMessage(
+                        "Pengingat deadline tidak akan muncul."
+                    )
                     .setPositiveButton("Ya") { _, _ ->
                         sharedPref.edit()
-                            .putBoolean("global_notification", false)
+                            .putBoolean(
+                                "global_notification",
+                                false
+                            )
                             .apply()
                         switchNotification.isChecked = false
                     }
@@ -284,17 +427,28 @@ class SettingFragment : Fragment() {
                     .show()
             } else {
                 sharedPref.edit()
-                    .putBoolean("global_notification", true)
+                    .putBoolean(
+                        "global_notification",
+                        true
+                    )
                     .apply()
             }
         }
     }
 
+    /**
+     * Menerapkan tema yang tersimpan saat fragment dibuat
+     */
     private fun applySavedTheme() {
-        val sharedPref = requireActivity()
-            .getSharedPreferences("app_settings", AppCompatActivity.MODE_PRIVATE)
 
-        val isDarkMode = sharedPref.getBoolean("dark_mode", false)
+        val sharedPref = requireActivity()
+            .getSharedPreferences(
+                "app_settings",
+                AppCompatActivity.MODE_PRIVATE
+            )
+
+        val isDarkMode =
+            sharedPref.getBoolean("dark_mode", false)
 
         AppCompatDelegate.setDefaultNightMode(
             if (isDarkMode)
@@ -303,5 +457,4 @@ class SettingFragment : Fragment() {
                 AppCompatDelegate.MODE_NIGHT_NO
         )
     }
-
 }

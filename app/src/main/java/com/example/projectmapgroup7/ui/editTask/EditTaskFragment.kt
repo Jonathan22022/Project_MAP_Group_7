@@ -23,28 +23,55 @@ import com.example.projectmapgroup7.viewmodel.EditTaskViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Fragment untuk mengedit data tugas yang sudah ada.
+ * Fitur utama:
+ * - Mengubah judul, deskripsi, dan deadline tugas
+ * - Mengganti atau mempertahankan gambar tugas
+ * - Mengambil gambar dari kamera atau galeri
+ * - Validasi input sebelum update
+ * - Terhubung dengan ViewModel (MVVM)
+ */
 class EditTaskFragment : Fragment() {
 
+    // ViewBinding untuk mengakses komponen UI dengan aman
     private var _binding: FragmentEditTaskBinding? = null
     private val binding get() = _binding!!
 
+    // ViewModel untuk menangani logika update tugas
     private val viewModel: EditTaskViewModel by viewModels()
 
+    // Kalender untuk memilih tanggal & waktu deadline
     private val calendar = Calendar.getInstance()
+
+    // URI gambar baru (jika user mengganti gambar)
     private var imageUri: Uri? = null
+
+    // URL gambar lama (jika user tidak mengganti gambar)
     private var originalImageUrl: String? = null
 
-    // ===== CAMERA =====
+    // ================= CAMERA =================
+    /**
+     * Launcher untuk mengambil foto menggunakan kamera
+     */
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
             if (success) {
+                // Menampilkan hasil foto ke ImageView
                 binding.previewGambar.setImageURI(imageUri)
             } else {
-                Toast.makeText(requireContext(), "Gagal mengambil foto", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal mengambil foto",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
-    // ===== GALLERY =====
+    // ================= GALLERY =================
+    /**
+     * Launcher untuk memilih gambar dari galeri
+     */
     private val galleryLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             uri?.let {
@@ -53,31 +80,52 @@ class EditTaskFragment : Fragment() {
             }
         }
 
-    // ===== PERMISSION =====
+    // ================= PERMISSION =================
+    /**
+     * Launcher untuk meminta izin kamera dan galeri
+     */
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val denied = permissions.filterValues { !it }.keys
+
             if (denied.isEmpty()) {
+                // Semua izin diberikan
                 showImageSourceDialog()
             } else {
-                Toast.makeText(requireContext(), "Izin kamera & galeri diperlukan", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Izin kamera & galeri diperlukan",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
+    /**
+     * Lifecycle Fragment: membuat dan menyiapkan UI
+     */
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentEditTaskBinding.inflate(inflater, container, false)
 
+        // Mengisi data awal dari task
         setInitialData()
+
+        // Mengamati hasil update dari ViewModel
         observeViewModel()
+
+        // Menyiapkan listener tombol
         setupListeners()
 
         return binding.root
     }
 
-    // ===== INIT DATA =====
+    // ================= INIT DATA =================
+    /**
+     * Mengisi data awal ke form edit berdasarkan arguments
+     */
     private fun setInitialData() {
         val title = arguments?.getString("title") ?: ""
         val description = arguments?.getString("description") ?: ""
@@ -88,6 +136,7 @@ class EditTaskFragment : Fragment() {
         binding.inputDeskripsi.setText(description)
         binding.tvTanggal.text = deadline
 
+        // Menampilkan gambar lama jika ada
         if (!originalImageUrl.isNullOrEmpty()) {
             Glide.with(requireContext())
                 .load(originalImageUrl)
@@ -95,19 +144,35 @@ class EditTaskFragment : Fragment() {
         }
     }
 
-    // ===== OBSERVE VM =====
+    // ================= OBSERVE VIEWMODEL =================
+    /**
+     * Mengamati hasil update task dari ViewModel
+     */
     private fun observeViewModel() {
         viewModel.editTaskState.observe(viewLifecycleOwner) { result ->
             result.onSuccess {
-                Toast.makeText(requireContext(), "Tugas berhasil diupdate!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Tugas berhasil diupdate!",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                // Kembali ke halaman sebelumnya
                 findNavController().navigateUp()
             }.onFailure {
-                Toast.makeText(requireContext(), it.message, Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    requireContext(),
+                    it.message,
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
 
-    // ===== LISTENERS =====
+    // ================= LISTENERS =================
+    /**
+     * Menyiapkan semua event klik tombol
+     */
     private fun setupListeners() {
         binding.btnPilihTanggal.setOnClickListener { showDatePicker() }
         binding.btnUploadGambar.setOnClickListener { checkPermissionsAndShowDialog() }
@@ -115,28 +180,46 @@ class EditTaskFragment : Fragment() {
         binding.btnBatal.setOnClickListener { findNavController().navigateUp() }
     }
 
-    // ===== UPDATE TASK =====
+    // ================= UPDATE TASK =================
+    /**
+     * Validasi input dan memanggil ViewModel untuk update tugas
+     */
     private fun updateTask() {
         val title = binding.inputJudul.text.toString().trim()
         val description = binding.inputDeskripsi.text.toString().trim()
         val deadline = binding.tvTanggal.text.toString().trim()
 
+        // Validasi input
         if (title.isEmpty() || description.isEmpty() || deadline.isEmpty()) {
-            Toast.makeText(requireContext(), "Lengkapi semua kolom!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "Lengkapi semua kolom!",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
+        // Ambil user ID dari SharedPreferences
         val sharedPref = requireActivity()
-            .getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE)
+            .getSharedPreferences(
+                "user_session",
+                android.content.Context.MODE_PRIVATE
+            )
+
         val userId = sharedPref.getString("id_user", null)
 
         if (userId.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "User belum login!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "User belum login!",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
         val originalTitle = arguments?.getString("title") ?: ""
 
+        // Memanggil ViewModel untuk update data
         viewModel.updateTask(
             userId = userId,
             originalTitle = originalTitle,
@@ -148,7 +231,10 @@ class EditTaskFragment : Fragment() {
         )
     }
 
-    // ===== DATE TIME =====
+    // ================= DATE & TIME =================
+    /**
+     * Menampilkan DatePicker untuk memilih tanggal
+     */
     private fun showDatePicker() {
         DatePickerDialog(
             requireContext(),
@@ -162,6 +248,9 @@ class EditTaskFragment : Fragment() {
         ).show()
     }
 
+    /**
+     * Menampilkan TimePicker untuk memilih waktu
+     */
     private fun showTimePicker() {
         TimePickerDialog(
             requireContext(),
@@ -176,18 +265,30 @@ class EditTaskFragment : Fragment() {
         ).show()
     }
 
+    /**
+     * Menampilkan hasil tanggal & waktu ke TextView
+     */
     private fun updateDateTimeText() {
-        val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val format =
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         binding.tvTanggal.text = format.format(calendar.time)
     }
 
-    // ===== IMAGE =====
+    // ================= IMAGE =================
+    /**
+     * Mengecek izin kamera dan galeri
+     */
     private fun checkPermissionsAndShowDialog() {
         val permissions = mutableListOf<String>()
 
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
-            != android.content.pm.PackageManager.PERMISSION_GRANTED
-        ) permissions.add(Manifest.permission.CAMERA)
+        if (
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.CAMERA
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            permissions.add(Manifest.permission.CAMERA)
+        }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
@@ -202,6 +303,9 @@ class EditTaskFragment : Fragment() {
         }
     }
 
+    /**
+     * Dialog pemilihan sumber gambar (kamera / galeri)
+     */
     private fun showImageSourceDialog() {
         val options = arrayOf("Ambil Foto", "Pilih dari Galeri")
 
@@ -216,19 +320,32 @@ class EditTaskFragment : Fragment() {
             .show()
     }
 
+    /**
+     * Mengambil foto menggunakan kamera
+     */
     private fun takePhoto() {
         val values = ContentValues().apply {
-            put(MediaStore.Images.Media.TITLE, "Task_${System.currentTimeMillis()}")
+            put(
+                MediaStore.Images.Media.TITLE,
+                "Task_${System.currentTimeMillis()}"
+            )
         }
 
-        imageUri = requireContext().contentResolver.insert(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            values
-        )
+        imageUri = requireContext()
+            .contentResolver
+            .insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                values
+            )
 
-        imageUri?.let { cameraLauncher.launch(it) }
+        imageUri?.let {
+            cameraLauncher.launch(it)
+        }
     }
 
+    /**
+     * Membersihkan binding saat Fragment dihancurkan
+     */
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

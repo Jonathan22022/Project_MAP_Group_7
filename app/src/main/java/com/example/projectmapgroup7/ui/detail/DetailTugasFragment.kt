@@ -24,17 +24,33 @@ import java.text.SimpleDateFormat
 import java.util.*
 import com.example.projectmapgroup7.viewmodel.DetailTugasViewModel
 
+/**
+ * Fragment untuk menampilkan detail lengkap dari sebuah tugas
+ * Meliputi judul, deskripsi, deadline, prioritas, gambar,
+ * serta aksi edit, tandai selesai, dan pengaturan notifikasi.
+ */
 class DetailTugasFragment : Fragment() {
 
+    // ViewModel untuk menangani logika detail tugas
     private val viewModel: DetailTugasViewModel by viewModels()
 
+    /**
+     * Lifecycle Fragment untuk membuat tampilan UI
+     */
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
 
-        val view = inflater.inflate(R.layout.fragment_detail_tugas, container, false)
+        // Inflate layout fragment_detail_tugas.xml
+        val view = inflater.inflate(
+            R.layout.fragment_detail_tugas,
+            container,
+            false
+        )
 
+        // Inisialisasi komponen UI
         val tvTitle = view.findViewById<TextView>(R.id.tvDetailTitle)
         val tvDesc = view.findViewById<TextView>(R.id.tvDetailDescription)
         val tvDeadline = view.findViewById<TextView>(R.id.tvDetailDeadline)
@@ -44,48 +60,110 @@ class DetailTugasFragment : Fragment() {
         val btnEdit = view.findViewById<Button>(R.id.btnEditTask)
         val switchNotif = view.findViewById<Switch>(R.id.switchNotification)
 
+        // Mengambil data task dari arguments
         val title = arguments?.getString("title") ?: return view
         val deadline = arguments?.getString("deadline")
 
+        // Menampilkan data task ke UI
         tvTitle.text = title
         tvDesc.text = arguments?.getString("description")
         tvDeadline.text = "Deadline: ${deadline ?: "-"}"
         tvPriority.text = "Prioritas: ${arguments?.getString("priority")}"
 
+        // Menampilkan gambar task jika tersedia
         arguments?.getString("image_url")?.let {
-            Glide.with(this).load(it).into(ivImage)
+            Glide.with(this)
+                .load(it)
+                .into(ivImage)
         }
 
-        // MARK AS DONE
+        /**
+         * Tombol Edit Task
+         * Navigasi ke EditTaskFragment dengan membawa data task
+         */
+        btnEdit.setOnClickListener {
+            val bundle = Bundle().apply {
+                putString("title", arguments?.getString("title"))
+                putString("description", arguments?.getString("description"))
+                putString("deadline", arguments?.getString("deadline"))
+                putString("priority", arguments?.getString("priority"))
+                putString("image_url", arguments?.getString("image_url"))
+            }
+
+            findNavController().navigate(
+                R.id.action_detailTugasFragment_to_editTaskFragment,
+                bundle
+            )
+        }
+
+        /**
+         * Tombol Mark As Done
+         * Menandai task sebagai selesai
+         */
         btnDone.setOnClickListener {
             val pref = requireActivity()
-                .getSharedPreferences("user_session", Context.MODE_PRIVATE)
+                .getSharedPreferences(
+                    "user_session",
+                    Context.MODE_PRIVATE
+                )
 
-            val userId = pref.getString("id_user", null) ?: return@setOnClickListener
+            val userId = pref.getString("id_user", null)
+                ?: return@setOnClickListener
+
+            // Memanggil ViewModel untuk update status task
             viewModel.markTaskDone(userId, title)
         }
 
-        // OBSERVE
+        /**
+         * Observer status task selesai
+         */
         viewModel.doneSuccess.observe(viewLifecycleOwner) {
             if (it) {
-                Toast.makeText(requireContext(), "Tugas selesai ✅", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Tugas selesai ✅",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                // Kembali ke halaman sebelumnya
                 findNavController().navigateUp()
             }
         }
 
-        // NOTIFICATION SWITCH
+        /**
+         * Pengaturan notifikasi deadline task
+         */
         val notifPref = requireActivity()
-            .getSharedPreferences("task_notifications", Context.MODE_PRIVATE)
+            .getSharedPreferences(
+                "task_notifications",
+                Context.MODE_PRIVATE
+            )
 
-        switchNotif.isChecked = notifPref.getBoolean("${title}_notif", true)
+        // Ambil status notifikasi sebelumnya
+        switchNotif.isChecked =
+            notifPref.getBoolean("${title}_notif", true)
 
+        // Listener perubahan switch notifikasi
         switchNotif.setOnCheckedChangeListener { _, checked ->
-            notifPref.edit().putBoolean("${title}_notif", checked).apply()
+
+            // Simpan preferensi notifikasi
+            notifPref.edit()
+                .putBoolean("${title}_notif", checked)
+                .apply()
 
             if (checked && deadline != null) {
-                viewModel.scheduleNotification(requireContext(), title, deadline)
+                // Jadwalkan notifikasi deadline
+                viewModel.scheduleNotification(
+                    requireContext(),
+                    title,
+                    deadline
+                )
             } else {
-                viewModel.cancelNotification(requireContext(), title)
+                // Batalkan notifikasi deadline
+                viewModel.cancelNotification(
+                    requireContext(),
+                    title
+                )
             }
         }
 

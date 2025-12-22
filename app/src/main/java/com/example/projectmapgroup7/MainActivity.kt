@@ -25,12 +25,30 @@ import android.content.pm.PackageManager
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.projectmapgroup7.util.NotificationUtils
 
+/**
+ * MainActivity
+ *
+ * Activity utama aplikasi yang berfungsi sebagai:
+ * - Host Navigation Component (FragmentContainerView)
+ * - Pengatur Toolbar, Drawer Navigation, dan Bottom Navigation
+ * - Pengelola tema (Dark / Light Mode)
+ * - Pengelola izin notifikasi dan session user
+ */
 class MainActivity : AppCompatActivity() {
 
+    // Konfigurasi AppBar untuk Navigation Component
     private lateinit var appBarConfiguration: AppBarConfiguration
+
+    // ViewBinding untuk Activity
     private lateinit var binding: ActivityMainBinding
+
+    // Controller untuk navigasi antar fragment
     private lateinit var navController: NavController
 
+    /**
+     * Mengatur tema aplikasi (Dark / Light Mode)
+     * berdasarkan preferensi yang tersimpan di SharedPreferences
+     */
     private fun applySavedTheme() {
         val sharedPref = getSharedPreferences("app_settings", MODE_PRIVATE)
         val isDarkMode = sharedPref.getBoolean("dark_mode", false)
@@ -43,6 +61,9 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    /**
+     * Launcher untuk meminta izin notifikasi (Android 13+)
+     */
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
@@ -52,18 +73,22 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    /**
+     * Lifecycle utama Activity
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Terapkan tema sebelum layout di-inflate
         applySavedTheme()
         super.onCreate(savedInstanceState)
 
-        // Inflate layout
+        // Inflate layout menggunakan ViewBinding
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 🔹 WAJIB: Buat Notification Channel
+        // Membuat Notification Channel (wajib Android 8+)
         NotificationUtils.createNotificationChannel(this)
 
-        // Request notification permission (Android 13+)
+        // Meminta izin notifikasi untuk Android 13 ke atas
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
@@ -74,40 +99,57 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Setup toolbar
+        // Mengatur toolbar sebagai ActionBar
         setSupportActionBar(binding.toolbar)
 
+        // Inisialisasi DrawerLayout & NavigationView
         val drawerLayout: DrawerLayout = binding.drawerLayout
         val navView: NavigationView = binding.navView
 
-        // Navigation Component
+        // Mendapatkan NavController dari NavHostFragment
         val navHostFragment =
-            supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
+            supportFragmentManager.findFragmentById(
+                R.id.nav_host_fragment_content_main
+            ) as NavHostFragment
         navController = navHostFragment.navController
 
+        // Konfigurasi AppBar (fragment yang dianggap top-level)
         appBarConfiguration = AppBarConfiguration(
             setOf(R.id.nav_home, R.id.nav_insight),
             drawerLayout
         )
 
+        // Sinkronisasi Toolbar dengan NavController
         setupActionBarWithNavController(navController, appBarConfiguration)
+
+        // Sinkronisasi Drawer Navigation dengan NavController
         navView.setupWithNavController(navController)
 
+        // Sinkronisasi Bottom Navigation dengan NavController
         val bottomNav: BottomNavigationView = binding.bottomNavigation
         bottomNav.setupWithNavController(navController)
 
-        // Drawer Header Setup
-        val headerView = navView.getHeaderView(0)
-        val headerProfileContainer = headerView.findViewById<LinearLayout>(R.id.headerProfileContainer)
-        val imageViewProfile = headerView.findViewById<ImageView>(R.id.imageViewProfile)
-        val tvUserName = headerView.findViewById<TextView>(R.id.tvUserName)
+        // =====================
+        // SETUP HEADER DRAWER
+        // =====================
 
+        val headerView = navView.getHeaderView(0)
+        val headerProfileContainer =
+            headerView.findViewById<LinearLayout>(R.id.headerProfileContainer)
+        val imageViewProfile =
+            headerView.findViewById<ImageView>(R.id.imageViewProfile)
+        val tvUserName =
+            headerView.findViewById<TextView>(R.id.tvUserName)
+
+        // Ambil data user dari SharedPreferences
         val sharedPref = getSharedPreferences("user_session", MODE_PRIVATE)
         val username = sharedPref.getString("username", "Guest")
         val profileUrl = sharedPref.getString("profile_picture", null)
 
+        // Tampilkan username
         tvUserName.text = username
 
+        // Load foto profil menggunakan Glide
         if (!profileUrl.isNullOrEmpty()) {
             Glide.with(this)
                 .load(profileUrl)
@@ -116,23 +158,32 @@ class MainActivity : AppCompatActivity() {
                 .into(imageViewProfile)
         }
 
+        // Klik header → buka halaman Account
         headerProfileContainer.setOnClickListener {
             navController.navigate(R.id.nav_account)
             drawerLayout.closeDrawers()
         }
 
-        // Drawer menu (logout + navigate)
+        // =====================
+        // HANDLER MENU DRAWER
+        // =====================
+
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
 
+                // Menu Logout
                 R.id.nav_logout -> {
                     AlertDialog.Builder(this)
                         .setTitle("Konfirmasi Logout")
                         .setMessage("Apakah Anda yakin ingin keluar dari akun ini?")
                         .setPositiveButton("Ya") { _, _ ->
-                            val sharedPref = getSharedPreferences("user_session", MODE_PRIVATE)
-                            sharedPref.edit().clear().apply()
+                            // Hapus session user
+                            getSharedPreferences("user_session", MODE_PRIVATE)
+                                .edit()
+                                .clear()
+                                .apply()
 
+                            // Navigasi ke Login dan hapus backstack
                             navController.navigate(
                                 R.id.loginFragment,
                                 null,
@@ -150,17 +201,23 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
+                // Menu lain → default navigation
                 else -> {
-                    androidx.navigation.ui.NavigationUI.onNavDestinationSelected(menuItem, navController)
+                    androidx.navigation.ui.NavigationUI
+                        .onNavDestinationSelected(menuItem, navController)
                     drawerLayout.closeDrawers()
                     true
                 }
             }
         }
 
-        // Hide navigation on login/register pages
+        // =====================
+        // VISIBILITY NAVIGATION
+        // =====================
+
+        // Sembunyikan toolbar & navigation pada halaman login/register
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            val bottomNav = binding.bottomNavigation
+            val bottomNavView = binding.bottomNavigation
             val toolbar = binding.toolbar
 
             when (destination.id) {
@@ -168,22 +225,30 @@ class MainActivity : AppCompatActivity() {
                 R.id.loginFormFragment,
                 R.id.registerFragment -> {
                     supportActionBar?.hide()
-                    bottomNav.visibility = View.GONE
+                    bottomNavView.visibility = View.GONE
                     toolbar.visibility = View.GONE
-                    drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+                    drawerLayout.setDrawerLockMode(
+                        DrawerLayout.LOCK_MODE_LOCKED_CLOSED
+                    )
                 }
 
                 else -> {
                     supportActionBar?.show()
-                    bottomNav.visibility = View.VISIBLE
+                    bottomNavView.visibility = View.VISIBLE
                     toolbar.visibility = View.VISIBLE
-                    drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+                    drawerLayout.setDrawerLockMode(
+                        DrawerLayout.LOCK_MODE_UNLOCKED
+                    )
                 }
             }
         }
     }
 
+    /**
+     * Mengatur aksi tombol back pada Toolbar
+     */
     override fun onSupportNavigateUp(): Boolean {
-        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+        return navController.navigateUp(appBarConfiguration)
+                || super.onSupportNavigateUp()
     }
 }
