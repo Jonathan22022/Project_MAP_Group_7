@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:background="?attr/colorSurface"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".ui.daftartugas.DaftarTugasFragment">
@@ -15,10 +16,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="70dp"
-        android:background="@color/white"
-        app:tabIndicatorColor="#1E88E5"
-        app:tabSelectedTextColor="#1E88E5"
-        app:tabTextColor="@color/gray"
+        android:background="?attr/colorSurface"
+        app:tabIndicatorColor="?attr/colorPrimary"
+        app:tabSelectedTextColor="?attr/colorPrimary"
+        app:tabTextColor="?attr/colorOnSurface"
         app:tabMode="fixed" />
 
     <!-- VIEWPAGER2 -->

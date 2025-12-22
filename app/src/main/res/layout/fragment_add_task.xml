@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
-    android:background="#F5F5F5"
+    android:background="?attr/colorSurface"
     tools:context=".ui.addtask.AddTaskFragment">
 
     <LinearLayout
@@ -19,7 +19,7 @@
             android:text="Tambah Tugas Baru"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="16dp" />
 
         <!-- Input Judul -->
@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:text="Judul Tugas"
             android:textStyle="bold"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="4dp" />
 
         <EditText
@@ -36,9 +36,8 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:hint="Masukkan judul tugas"
-            android:background="#E0E0E0"
             android:paddingHorizontal="12dp"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurface"
             android:backgroundTint="@null"
             android:layout_marginBottom="12dp" />
 
@@ -48,7 +47,7 @@
             android:layout_height="wrap_content"
             android:text="Deskripsi"
             android:textStyle="bold"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="4dp" />
 
         <EditText
@@ -57,10 +56,10 @@
             android:layout_height="120dp"
             android:hint="Tulis deskripsi tugas di sini"
             android:gravity="top|start"
-            android:background="#E0E0E0"
             android:padding="12dp"
             android:backgroundTint="@null"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurface"
+            android:background="?attr/colorSurfaceVariant"
             android:layout_marginBottom="12dp" />
 
         <!-- Input Tanggal -->
@@ -69,14 +68,14 @@
             android:layout_height="wrap_content"
             android:text="Jatuh Tempo"
             android:textStyle="bold"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="4dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:orientation="horizontal"
-            android:background="#E0E0E0"
+            android:background="?attr/colorSurfaceVariant"
             android:gravity="center_vertical"
             android:paddingHorizontal="12dp"
             android:layout_marginBottom="20dp">
@@ -88,14 +87,14 @@
                 android:layout_weight="1"
                 android:text="23/09/2025"
                 android:textStyle="bold"
-                android:textColor="@android:color/black" />
+                android:textColor="?attr/colorOnSurface" />
 
             <ImageView
                 android:id="@+id/btn_pilih_tanggal"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_today"
-                android:tint="@android:color/black" />
+                android:tint="?attr/colorOnSurface" />
         </LinearLayout>
 
         <!-- Upload Gambar -->
@@ -104,7 +103,7 @@
             android:layout_height="wrap_content"
             android:text="Lampiran Gambar"
             android:textStyle="bold"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="4dp" />
 
         <ImageView
@@ -112,7 +111,7 @@
             android:layout_width="match_parent"
             android:layout_height="180dp"
             android:scaleType="centerCrop"
-            android:background="#E0E0E0"
+            android:background="?attr/colorSurfaceVariant"
             android:layout_marginBottom="8dp"
             android:contentDescription="Preview gambar" />
 

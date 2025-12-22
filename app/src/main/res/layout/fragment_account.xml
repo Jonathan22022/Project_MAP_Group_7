@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
-    android:background="#FFFFFF"
+    android:background="?attr/colorSurface"
     tools:context=".ui.account.AccountFragment">
 
     <LinearLayout
@@ -32,7 +32,7 @@
             android:text="Guest"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="#000000"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="16dp" />
 
         <!-- Info akun -->
@@ -42,6 +42,7 @@
             android:layout_height="wrap_content"
             android:text="Usia Akun: - hari"
             android:textSize="16sp"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="24dp" />
 
         <!-- Statistik tugas -->
@@ -64,7 +65,7 @@
                     android:text="0"
                     android:textSize="24sp"
                     android:textStyle="bold"
-                    android:textColor="#000000"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_marginBottom="4dp"
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content" />
@@ -72,6 +73,7 @@
                 <TextView
                     android:text="Total Tugas"
                     android:textSize="16sp"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"/>
             </LinearLayout>
@@ -88,7 +90,7 @@
                     android:text="0"
                     android:textSize="24sp"
                     android:textStyle="bold"
-                    android:textColor="#000000"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_marginBottom="4dp"
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content" />
@@ -96,6 +98,7 @@
                 <TextView
                     android:text="Tugas Selesai"
                     android:textSize="16sp"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content" />
             </LinearLayout>

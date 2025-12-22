@@ -10,7 +10,7 @@
     android:paddingBottom="24dp"
     android:clickable="true"
     android:focusable="true"
-    android:background="?attr/selectableItemBackground">
+    android:background="?attr/colorSurface">
 
     <!-- Foto profil, ubah yang android:src agar menampilkan profile_picutre dari akun yang dilogin -->
     <ImageView
@@ -31,11 +31,11 @@
         android:text="Guest"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="#000000"
+        android:textColor="?attr/colorOnSurface"
         android:layout_marginBottom="12dp" />
 
     <View
         android:layout_width="80dp"
         android:layout_height="2dp"
-        android:background="#000000" />
+        android:background="?attr/colorOutline" />
 </LinearLayout>
