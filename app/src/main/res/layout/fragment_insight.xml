@@ -127,7 +127,7 @@
                     android:padding="16dp">
 
                     <TextView
-                        android:text="Saran Data Mining"
+                        android:text="Saran Untuk Kedepan"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:layout_marginBottom="8dp"

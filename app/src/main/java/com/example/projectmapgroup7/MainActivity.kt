@@ -2,6 +2,7 @@ package com.example.projectmapgroup7
 
 import android.app.AlertDialog
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatDelegate
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -20,8 +21,6 @@ import com.example.projectmapgroup7.databinding.ActivityMainBinding
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationView
 import android.Manifest
-import android.app.AlarmManager
-import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.projectmapgroup7.util.NotificationUtils
@@ -31,6 +30,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
+
+    private fun applySavedTheme() {
+        val sharedPref = getSharedPreferences("app_settings", MODE_PRIVATE)
+        val isDarkMode = sharedPref.getBoolean("dark_mode", false)
+
+        AppCompatDelegate.setDefaultNightMode(
+            if (isDarkMode)
+                AppCompatDelegate.MODE_NIGHT_YES
+            else
+                AppCompatDelegate.MODE_NIGHT_NO
+        )
+    }
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -42,6 +53,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        applySavedTheme()
         super.onCreate(savedInstanceState)
 
         // Inflate layout

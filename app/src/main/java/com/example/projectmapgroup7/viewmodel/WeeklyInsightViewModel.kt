@@ -31,8 +31,8 @@ class WeeklyInsightViewModel(
     private val _chartData = MutableLiveData<ChartData>()
     val chartData: LiveData<ChartData> = _chartData
 
-    private val _suggestions = MutableLiveData<String>()
-    val suggestions: LiveData<String> = _suggestions
+    private val _suggestions = MutableLiveData<String?>()
+    val suggestions: MutableLiveData<String?> = _suggestions
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 

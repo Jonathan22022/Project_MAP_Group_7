@@ -59,6 +59,9 @@
         app:headerLayout="@layout/nav_header_main"
         app:menu="@menu/activity_main_drawer"
         android:background="@color/white"
+        app:itemIconTint="?attr/colorOnSurface"
+        app:itemTextColor="?attr/colorOnSurface"
+        app:itemBackground="?attr/selectableItemBackground"
         android:elevation="16dp" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

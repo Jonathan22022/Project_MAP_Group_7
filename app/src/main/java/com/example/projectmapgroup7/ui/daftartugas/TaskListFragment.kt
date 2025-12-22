@@ -103,7 +103,7 @@ class TaskListFragment : Fragment() {
         }
 
         tasks.forEach { task ->
-            val view = inflater.inflate(R.layout.item_task, containerTugas, false)
+            val view = inflater.inflate(R.layout.item_task_daftar, containerTugas, false)
 
             val tvTitle = view.findViewById<TextView>(R.id.tvTaskTitle)
             val tvDeadline = view.findViewById<TextView>(R.id.tvTaskDeadline)
@@ -115,8 +115,11 @@ class TaskListFragment : Fragment() {
             tvDeadline.text = "Deadline: ${task.deadline}"
 
             cbSelect.setOnCheckedChangeListener { _, checked ->
-                if (checked) selectedTasks.add(task.title)
-                else selectedTasks.remove(task.title)
+                if (checked) {
+                    selectedTasks.add(task.title)
+                } else {
+                    selectedTasks.remove(task.title)
+                }
 
                 fabDelete.visibility =
                     if (selectedTasks.isNotEmpty()) View.VISIBLE else View.GONE

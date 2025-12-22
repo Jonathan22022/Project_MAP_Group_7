@@ -71,7 +71,7 @@ class SettingFragment : Fragment() {
     ): View {
 
         val view = inflater.inflate(R.layout.fragment_setting, container, false)
-
+        applySavedTheme()
         setupThemeSwitch(view)
         setupNotificationSwitch(view)
         setupAccountDialog(view)
@@ -240,7 +240,8 @@ class SettingFragment : Fragment() {
         val sharedPref = requireActivity()
             .getSharedPreferences("app_settings", AppCompatActivity.MODE_PRIVATE)
 
-        switchTheme.isChecked = sharedPref.getBoolean("dark_mode", false)
+        val isDarkMode = sharedPref.getBoolean("dark_mode", false)
+        switchTheme.isChecked = isDarkMode
 
         switchTheme.setOnCheckedChangeListener { _, isChecked ->
             sharedPref.edit().putBoolean("dark_mode", isChecked).apply()
@@ -288,4 +289,19 @@ class SettingFragment : Fragment() {
             }
         }
     }
+
+    private fun applySavedTheme() {
+        val sharedPref = requireActivity()
+            .getSharedPreferences("app_settings", AppCompatActivity.MODE_PRIVATE)
+
+        val isDarkMode = sharedPref.getBoolean("dark_mode", false)
+
+        AppCompatDelegate.setDefaultNightMode(
+            if (isDarkMode)
+                AppCompatDelegate.MODE_NIGHT_YES
+            else
+                AppCompatDelegate.MODE_NIGHT_NO
+        )
+    }
+
 }
